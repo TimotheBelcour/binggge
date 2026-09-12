@@ -77,6 +77,9 @@ app.get("/watchlist", user, async (req, res) => {
 // Ajout d'une serie a la liste de suivi
 app.post("/watchlist", user, async (req, res) => {
   const { show_id, title } = req.body || {};
+  if (!title || !title.trim()) {
+    return res.status(400).json({ error: "titre vide" });
+  }
   const { rows } = await db.query(
     "INSERT INTO watchlist(user_id, show_id, title) VALUES($1, $2, $3) RETURNING id, show_id, title, seen",
     [req.user.id, show_id, title]

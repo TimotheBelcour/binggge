@@ -48,5 +48,10 @@ test("watchlist sans en-tête : 401", async () => {
   assert.equal(r.status, 401);
 });
 
-// Defi de fin de seance 2
-test.todo("un titre vide est refusé");
+test("un titre vide est refusé", async () => {
+  const r = await request(app)
+    .post("/watchlist")
+    .set("X-User", login)
+    .send({ show_id: 1, title: "" });
+  assert.equal(r.status, 400);
+});
