@@ -14,3 +14,8 @@ test("GET /watchlist renvoie une liste vide au demarrage", async () => {
   assert.strictEqual(res.status, 200);
   assert.deepStrictEqual(res.body, []);
 });
+
+// Squelette des tests de la seance 2 : en attente tant que les fonctionnalites n'existent pas
+test.todo("inscription puis connexion");
+test.todo("watchlist sans en-tête : 401");
+test.todo("un titre vide est refusé");
