@@ -5,14 +5,24 @@ Un suivi de séries : chercher une série, l'ajouter à sa liste, cocher les ép
 ## Démarrer
 
 ```
-docker compose up -d && docker compose exec -T db psql -U postgres binggge < api/db/schema.sql
-cd api && npm install && npm start
+cp .env.example .env   # puis choisir un mot de passe DB_PASS
+docker compose up -d --build
 ```
 
-L'API écoute sur `http://localhost:3000`. PostgreSQL tourne dans un conteneur (port hôte `5433`),
-les données sont conservées dans le volume `pgdata` entre deux `docker compose down` / `up`.
+Deux conteneurs démarrent : `api` (image construite depuis `api/Dockerfile`) et `db` (PostgreSQL 16).
+Le schéma `api/db/schema.sql` est appliqué automatiquement à la création du volume `pgdata`,
+et les données survivent à un `docker compose down` / `up`.
 
-Copier `.env.example` en `.env` pour modifier `DATABASE_URL` ou `PORT` (`.env` n'est pas versionné).
+L'API ne publie aucun port : en production, Traefik la joint directement sur le réseau Docker.
+Pour la tester en local :
+
+```
+docker compose exec api wget -qO- localhost:3000/health
+```
+
+Le mot de passe de la base vient du fichier `.env` (`DB_PASS`), **jamais versionné**.
+`docker-compose.override.yml` est chargé automatiquement en local et publie la base sur le port
+`5433` pour pouvoir lancer les tests depuis la machine ; il n'est pas utilisé sur le serveur.
 
 ## Routes existantes
 
@@ -39,10 +49,11 @@ curl localhost:3000/watchlist -H 'X-User: olivia'
 
 ```
 docker compose up -d
-cd api && npm test
+cd api && npm install && npm test
 ```
 
-Les tests utilisent la base PostgreSQL du conteneur (`DATABASE_URL`).
+Les tests s'exécutent sur la machine et joignent la base du conteneur via `DATABASE_URL`
+(défini dans `.env`, port `5433`).
 
 ## Ce qui n'existe pas encore
 
