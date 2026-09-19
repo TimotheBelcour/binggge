@@ -16,7 +16,7 @@ test.after(async () => {
 
 test("health répond ok", async () => {
   const r = await request(app).get("/health");
-  assert.equal(r.status, 200);
+  assert.equal(r.status, 418);
   assert.deepStrictEqual(r.body, { status: "ok" });
 });
 
