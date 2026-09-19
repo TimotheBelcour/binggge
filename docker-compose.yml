@@ -1,11 +1,18 @@
 services:
+  api:
+    build: ./api
+    environment:
+      DATABASE_URL: postgres://postgres:${DB_PASS}@db:5432/binggge
+    depends_on: [db]
+    restart: unless-stopped
   db:
     image: postgres:16-alpine
     environment:
       POSTGRES_DB: binggge
-      POSTGRES_PASSWORD: binggge
-    # 5433 cote hote : 5432 est deja pris par un autre conteneur sur cette machine
-    ports: ["5433:5432"]
-    volumes: ["pgdata:/var/lib/postgresql/data"]
+      POSTGRES_PASSWORD: ${DB_PASS}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      # applique le schema automatiquement a la premiere creation du volume
+      - ./api/db/schema.sql:/docker-entrypoint-initdb.d/schema.sql:ro
 volumes:
   pgdata:
