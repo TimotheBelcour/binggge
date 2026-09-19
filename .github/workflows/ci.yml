@@ -1,0 +1,48 @@
+# Pipeline : test -> build -> deploy (equivalent GitHub Actions du .gitlab-ci.yml du cours)
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: binggge
+          POSTGRES_PASSWORD: test
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgres://postgres:test@localhost:5432/binggge
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Applique le schema
+        run: PGPASSWORD=test psql -h localhost -U postgres binggge < api/db/schema.sql
+      - name: Installe et teste
+        run: cd api && npm ci && npm test
+
+  build:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      # Chaque commit produit une image portant son propre nom (equivalent de CI_COMMIT_SHORT_SHA)
+      - name: Construit l'image
+        run: docker build -t binggge-api:${GITHUB_SHA::7} ./api
+      - name: Verifie que l'image demarre
+        run: |
+          docker run -d --name api -e DATABASE_URL=postgres://x:x@db:5432/binggge binggge-api:${GITHUB_SHA::7}
+          sleep 3
+          docker exec api wget -qO- localhost:3000/health
