@@ -55,6 +55,26 @@ cd api && npm install && npm test
 Les tests s'exécutent sur la machine et joignent la base du conteneur via `DATABASE_URL`
 (défini dans `.env`, port `5433`).
 
+## Pipeline
+
+À chaque pull request et à chaque push sur `main`, GitHub Actions (`.github/workflows/ci.yml`) enchaîne :
+
+1. **test** — PostgreSQL en service, schéma appliqué, `npm ci` puis `npm test`
+2. **build** — construit l'image `binggge-api:<sha>` et vérifie qu'elle répond sur `/health`
+3. **deploy** — sur `main` uniquement : se connecte en SSH au serveur et lance `docker compose up -d --build`
+
+`main` est protégée : une PR dont les checks `test` ou `build` sont rouges ne peut pas être mergée
+(preuve : `PIPELINE_BLOQUE.jpeg`).
+
+## Définition de « fini »
+
+Un ticket est fini quand les quatre conditions sont réunies :
+
+1. Le pipeline est vert.
+2. L'URL répond depuis une autre machine que la mienne.
+3. Le README dit comment la joindre.
+4. Le ticket est fermé par une MR (`Closes #n`).
+
 ## Ce qui n'existe pas encore
 
 - Pas de vraie authentification (voir ci-dessus)
