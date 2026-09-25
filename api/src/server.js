@@ -87,6 +87,35 @@ app.post("/watchlist", user, async (req, res) => {
   res.status(201).json(rows[0]);
 });
 
+// Retire une serie de la liste de suivi
+// Le user_id dans la clause WHERE garantit qu'on ne supprime jamais la ligne d'un autre
+app.delete("/watchlist/:id", user, async (req, res) => {
+  const { rowCount } = await db.query(
+    "DELETE FROM watchlist WHERE id = $1 AND user_id = $2",
+    [req.params.id, req.user.id]
+  );
+  if (rowCount === 0) {
+    return res.status(404).json({ error: "série introuvable" });
+  }
+  res.status(204).end();
+});
+
+// Marque une serie vue ou non vue
+app.patch("/watchlist/:id", user, async (req, res) => {
+  const { seen } = req.body || {};
+  if (typeof seen !== "boolean") {
+    return res.status(400).json({ error: "seen doit être un booléen" });
+  }
+  const { rows } = await db.query(
+    "UPDATE watchlist SET seen = $1 WHERE id = $2 AND user_id = $3 RETURNING id, show_id, title, seen",
+    [seen, req.params.id, req.user.id]
+  );
+  if (rows.length === 0) {
+    return res.status(404).json({ error: "série introuvable" });
+  }
+  res.json(rows[0]);
+});
+
 // Demarrage du serveur (ignore quand le fichier est importe par les tests)
 if (require.main === module) {
   app.listen(PORT, () => {

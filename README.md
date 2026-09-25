@@ -31,6 +31,8 @@ Le mot de passe de la base vient du fichier `.env` (`DB_PASS`), **jamais version
 - `POST /register` — crée un utilisateur à partir d'un `login` (`409` s'il existe déjà)
 - `GET /watchlist` — renvoie la liste de suivi de l'utilisateur (`401` sans en-tête `X-User`)
 - `POST /watchlist` — ajoute une série (`show_id`, `title`) à la liste de l'utilisateur
+- `PATCH /watchlist/:id` — marque une série vue ou non vue (`seen`, booléen)
+- `DELETE /watchlist/:id` — retire une série de la liste (`404` si elle appartient à quelqu'un d'autre)
 
 ## Authentification
 
