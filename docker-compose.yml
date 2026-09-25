@@ -1,6 +1,8 @@
 services:
   api:
-    build: ./api
+    build:
+      context: .
+      dockerfile: api/Dockerfile
     environment:
       DATABASE_URL: postgres://postgres:${DB_PASS}@db:5432/binggge
     depends_on: [db]

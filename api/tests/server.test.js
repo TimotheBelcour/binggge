@@ -21,6 +21,13 @@ test("health répond ok", async () => {
   assert.deepStrictEqual(r.body, { status: "ok" });
 });
 
+test("la page d'accueil est servie", async () => {
+  const r = await request(app).get("/");
+  assert.equal(r.status, 200);
+  assert.match(r.headers["content-type"], /html/);
+  assert.match(r.text, /binggge/);
+});
+
 test("une inscription crée bien l'utilisateur", async () => {
   const r = await request(app).post("/register").send({ login });
   assert.equal(r.status, 201);

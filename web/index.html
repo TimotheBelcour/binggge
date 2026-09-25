@@ -1,0 +1,258 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>binggge</title>
+<style>
+  :root {
+    --fond: #14151a;
+    --carte: #1d1f27;
+    --bord: #2c2f3a;
+    --texte: #e8e9ed;
+    --doux: #9aa0b0;
+    --accent: #e0b341;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    padding: 2rem 1rem 4rem;
+    background: var(--fond);
+    color: var(--texte);
+    font: 16px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+  main { max-width: 52rem; margin: 0 auto; }
+  h1 { font-size: 2rem; margin: 0 0 .25rem; letter-spacing: -.02em; }
+  h2 { font-size: 1.1rem; margin: 2.5rem 0 .75rem; }
+  .sous-titre { color: var(--doux); margin: 0 0 2rem; }
+  input, button { font: inherit; }
+  input {
+    padding: .6rem .8rem;
+    background: var(--carte);
+    border: 1px solid var(--bord);
+    border-radius: .5rem;
+    color: var(--texte);
+  }
+  input:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+  button {
+    padding: .6rem .9rem;
+    background: var(--accent);
+    border: 0;
+    border-radius: .5rem;
+    color: #1a1a1a;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  button.discret {
+    background: transparent;
+    border: 1px solid var(--bord);
+    color: var(--doux);
+    font-weight: 400;
+  }
+  button:disabled { opacity: .5; cursor: default; }
+  form { display: flex; gap: .5rem; flex-wrap: wrap; }
+  form input { flex: 1; min-width: 12rem; }
+  ul { list-style: none; margin: 0; padding: 0; display: grid; gap: .5rem; }
+  li {
+    display: flex;
+    align-items: center;
+    gap: .75rem;
+    padding: .6rem;
+    background: var(--carte);
+    border: 1px solid var(--bord);
+    border-radius: .6rem;
+  }
+  li img { width: 40px; height: 56px; object-fit: cover; border-radius: .3rem; background: var(--bord); }
+  li .titre { flex: 1; min-width: 0; }
+  li .titre b { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  li .titre span { color: var(--doux); font-size: .875rem; }
+  li.vue .titre b { color: var(--doux); text-decoration: line-through; }
+  .vide { color: var(--doux); font-style: italic; }
+  .erreur { color: #f0a0a0; }
+  header.moi { display: flex; align-items: baseline; gap: .75rem; margin-bottom: 2rem; }
+  header.moi span { color: var(--doux); }
+</style>
+</head>
+<body>
+<div id="racine"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.3.1/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.3.1/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/htm/3.1.1/htm.umd.js"></script>
+<script>
+const { useState, useEffect, useCallback } = React;
+const html = htm.bind(React.createElement);
+
+// L'API est servie par le meme serveur que cette page : on deduit la base de l'URL courante,
+// ce qui fonctionne aussi bien en local qu'en ligne derriere un prefixe (/<pseudo>/).
+const BASE = location.pathname.replace(/\/[^/]*$/, "");
+
+async function api(chemin, options = {}) {
+  const login = localStorage.getItem("binggge_login");
+  const reponse = await fetch(BASE + chemin, {
+    ...options,
+    headers: {
+      "content-type": "application/json",
+      ...(login ? { "X-User": login } : {}),
+      ...options.headers,
+    },
+  });
+  if (!reponse.ok) {
+    const corps = await reponse.json().catch(() => ({}));
+    throw new Error(corps.error || `erreur ${reponse.status}`);
+  }
+  return reponse.status === 204 ? null : reponse.json();
+}
+
+function Connexion({ onConnecte }) {
+  const [login, setLogin] = useState("");
+  const [erreur, setErreur] = useState(null);
+
+  async function entrer(e) {
+    e.preventDefault();
+    const nom = login.trim();
+    if (!nom) return;
+    try {
+      // 409 = le login existe deja, c'est un retour normal ici
+      await api("/register", { method: "POST", body: JSON.stringify({ login: nom }) });
+    } catch (err) {
+      if (!/déjà pris/.test(err.message)) {
+        setErreur(err.message);
+        return;
+      }
+    }
+    localStorage.setItem("binggge_login", nom);
+    onConnecte(nom);
+  }
+
+  return html`
+    <form onSubmit=${entrer}>
+      <input value=${login} onInput=${(e) => setLogin(e.target.value)}
+             placeholder="Votre login" aria-label="Votre login" />
+      <button type="submit">Entrer</button>
+      ${erreur && html`<p class="erreur">${erreur}</p>`}
+    </form>
+  `;
+}
+
+function Recherche({ onAjout }) {
+  const [q, setQ] = useState("");
+  const [resultats, setResultats] = useState([]);
+  const [cherche, setCherche] = useState(false);
+
+  async function chercher(e) {
+    e.preventDefault();
+    if (!q.trim()) return;
+    setCherche(true);
+    try {
+      setResultats(await api(`/shows?q=${encodeURIComponent(q)}`));
+    } finally {
+      setCherche(false);
+    }
+  }
+
+  return html`
+    <form onSubmit=${chercher}>
+      <input value=${q} onInput=${(e) => setQ(e.target.value)}
+             placeholder="Chercher une série…" aria-label="Chercher une série" />
+      <button type="submit" disabled=${cherche}>${cherche ? "…" : "Chercher"}</button>
+    </form>
+    ${resultats.length > 0 && html`
+      <ul>
+        ${resultats.slice(0, 8).map((s) => html`
+          <li key=${s.id}>
+            <img src=${s.image || ""} alt="" />
+            <div class="titre"><b>${s.title}</b><span>${s.year || "année inconnue"}</span></div>
+            <button onClick=${() => onAjout(s)}>Ajouter</button>
+          </li>
+        `)}
+      </ul>
+    `}
+  `;
+}
+
+function Liste({ series, onBascule, onRetrait }) {
+  if (series.length === 0) {
+    return html`<p class="vide">Votre liste est vide. Cherchez une série pour commencer.</p>`;
+  }
+  return html`
+    <ul>
+      ${series.map((s) => html`
+        <li key=${s.id} class=${s.seen ? "vue" : ""}>
+          <input type="checkbox" checked=${s.seen} onChange=${() => onBascule(s)}
+                 aria-label=${`Marquer ${s.title} comme vue`} />
+          <div class="titre"><b>${s.title}</b></div>
+          <button class="discret" onClick=${() => onRetrait(s)}>Retirer</button>
+        </li>
+      `)}
+    </ul>
+  `;
+}
+
+function App() {
+  const [login, setLogin] = useState(() => localStorage.getItem("binggge_login"));
+  const [series, setSeries] = useState([]);
+  const [erreur, setErreur] = useState(null);
+
+  const recharger = useCallback(async () => {
+    try {
+      setSeries(await api("/watchlist"));
+      setErreur(null);
+    } catch (err) {
+      setErreur(err.message);
+    }
+  }, []);
+
+  useEffect(() => { if (login) recharger(); }, [login, recharger]);
+
+  async function ajouter(serie) {
+    await api("/watchlist", {
+      method: "POST",
+      body: JSON.stringify({ show_id: serie.id, title: serie.title }),
+    });
+    recharger();
+  }
+
+  async function basculer(serie) {
+    await api(`/watchlist/${serie.id}`, {
+      method: "PATCH",
+      body: JSON.stringify({ seen: !serie.seen }),
+    });
+    recharger();
+  }
+
+  async function retirer(serie) {
+    await api(`/watchlist/${serie.id}`, { method: "DELETE" });
+    recharger();
+  }
+
+  function sortir() {
+    localStorage.removeItem("binggge_login");
+    setLogin(null);
+    setSeries([]);
+  }
+
+  return html`
+    <main>
+      <h1>binggge</h1>
+      <p class="sous-titre">Un suivi de séries.</p>
+      ${!login
+        ? html`<${Connexion} onConnecte=${setLogin} />`
+        : html`
+            <header class="moi">
+              <span>Connecté comme <b>${login}</b></span>
+              <button class="discret" onClick=${sortir}>Changer</button>
+            </header>
+            <${Recherche} onAjout=${ajouter} />
+            <h2>Ma liste</h2>
+            ${erreur && html`<p class="erreur">${erreur}</p>`}
+            <${Liste} series=${series} onBascule=${basculer} onRetrait=${retirer} />
+          `}
+    </main>
+  `;
+}
+
+ReactDOM.createRoot(document.getElementById("racine")).render(html`<${App} />`);
+</script>
+</body>
+</html>
