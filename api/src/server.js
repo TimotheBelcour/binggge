@@ -1,9 +1,13 @@
 // API de suivi de series - support de cours Git & deploiement
+const path = require("node:path");
 const express = require("express");
 const db = require("./db");
 
 const app = express();
 app.use(express.json());
+
+// L'interface est servie par le meme serveur que l'API : une seule image, une seule origine
+app.use(express.static(path.join(__dirname, "..", "..", "web")));
 
 // Le port est configurable via l'environnement (utile en Docker / CI)
 const PORT = process.env.PORT || 3000;

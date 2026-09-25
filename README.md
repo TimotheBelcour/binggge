@@ -24,6 +24,16 @@ Le mot de passe de la base vient du fichier `.env` (`DB_PASS`), **jamais version
 `docker-compose.override.yml` est chargé automatiquement en local et publie la base sur le port
 `5433` pour pouvoir lancer les tests depuis la machine ; il n'est pas utilisé sur le serveur.
 
+## Interface
+
+La page `web/index.html` est servie par l'API elle-même, à la racine (`/`) : on entre un login,
+on cherche une série, on l'ajoute à sa liste, on la coche quand on l'a vue, on la retire.
+Elle est écrite en React chargé depuis un CDN, sans étape de build — le fichier HTML est le
+livrable, l'image Docker l'embarque.
+
+Le login saisi est gardé dans le `localStorage` du navigateur et renvoyé à chaque appel dans
+l'en-tête `X-User` (voir la section Authentification).
+
 ## Routes existantes
 
 - `GET /health` — renvoie `{ "status": "ok" }`
@@ -80,5 +90,6 @@ Un ticket est fini quand les quatre conditions sont réunies :
 ## Ce qui n'existe pas encore
 
 - Pas de vraie authentification (voir ci-dessus)
+- Le suivi se fait série par série, pas épisode par épisode
 - Pas d'interface web (page React)
 - Pas de déploiement automatisé
