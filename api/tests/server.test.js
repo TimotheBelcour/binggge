@@ -37,6 +37,11 @@ test("une inscription crée bien l'utilisateur", async () => {
   assert.equal(rows.length, 1);
 });
 
+test("réinscrire un login existant renvoie 409", async () => {
+  const r = await request(app).post("/register").send({ login });
+  assert.equal(r.status, 409);
+});
+
 test("ajouter une série la fait apparaître dans /watchlist", async () => {
   const ajout = await request(app)
     .post("/watchlist")
