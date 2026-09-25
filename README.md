@@ -13,16 +13,14 @@ Deux conteneurs démarrent : `api` (image construite depuis `api/Dockerfile`) et
 Le schéma `api/db/schema.sql` est appliqué automatiquement à la création du volume `pgdata`,
 et les données survivent à un `docker compose down` / `up`.
 
-L'API ne publie aucun port : en production, Traefik la joint directement sur le réseau Docker.
-Pour la tester en local :
-
-```
-docker compose exec api wget -qO- localhost:3000/health
-```
+En production l'API ne publie aucun port : Traefik la joint directement sur le réseau Docker.
+En local, `docker-compose.override.yml` la publie sur le port 3000 : ouvrez
+**http://localhost:3000** dans un navigateur pour utiliser l'interface.
 
 Le mot de passe de la base vient du fichier `.env` (`DB_PASS`), **jamais versionné**.
-`docker-compose.override.yml` est chargé automatiquement en local et publie la base sur le port
-`5433` pour pouvoir lancer les tests depuis la machine ; il n'est pas utilisé sur le serveur.
+`docker-compose.override.yml` est chargé automatiquement en local : il publie l'API sur le port
+`3000` et la base sur le port `5433` (pour lancer les tests depuis la machine). Il n'est pas
+utilisé sur le serveur, où les commandes précisent `-f docker-compose.yml`.
 
 ## Interface
 
@@ -73,7 +71,8 @@ Les tests s'exécutent sur la machine et joignent la base du conteneur via `DATA
 
 1. **test** — PostgreSQL en service, schéma appliqué, `npm ci` puis `npm test`
 2. **build** — construit l'image `binggge-api:<sha>` et vérifie qu'elle répond sur `/health`
-3. **deploy** — sur `main` uniquement : se connecte en SSH au serveur et lance `docker compose up -d --build`
+3. **deploy** — *pas encore en place* : sur `main` uniquement, se connectera en SSH au serveur
+   pour lancer `docker compose up -d --build`. En attente des droits Docker sur le serveur.
 
 `main` est protégée : une PR dont les checks `test` ou `build` sont rouges ne peut pas être mergée
 (preuve : `PIPELINE_BLOQUE.jpeg`).
@@ -91,5 +90,4 @@ Un ticket est fini quand les quatre conditions sont réunies :
 
 - Pas de vraie authentification (voir ci-dessus)
 - Le suivi se fait série par série, pas épisode par épisode
-- Pas d'interface web (page React)
-- Pas de déploiement automatisé
+- Pas de déploiement automatisé : le job `deploy` attend les droits Docker sur le serveur

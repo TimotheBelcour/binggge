@@ -1,6 +1,9 @@
 # Charge automatiquement par `docker compose` en local, jamais utilise sur le serveur
 # (le deploiement passe explicitement -f docker-compose.yml).
-# Publie la base sur 5433 pour lancer `npm test` depuis la machine.
+# Publie l'API sur 3000 pour ouvrir l'interface dans un navigateur,
+# et la base sur 5433 pour lancer `npm test` depuis la machine.
 services:
+  api:
+    ports: ["3000:3000"]
   db:
     ports: ["5433:5432"]
