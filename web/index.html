@@ -99,7 +99,10 @@ async function api(chemin, options = {}) {
   });
   if (!reponse.ok) {
     const corps = await reponse.json().catch(() => ({}));
-    throw new Error(corps.error || `erreur ${reponse.status}`);
+    const erreur = new Error(corps.error || `erreur ${reponse.status}`);
+    // Le code HTTP porte le sens, pas le texte du message : l'appelant s'y fie
+    erreur.status = reponse.status;
+    throw erreur;
   }
   return reponse.status === 204 ? null : reponse.json();
 }
@@ -113,10 +116,10 @@ function Connexion({ onConnecte }) {
     const nom = login.trim();
     if (!nom) return;
     try {
-      // 409 = le login existe deja, c'est un retour normal ici
       await api("/register", { method: "POST", body: JSON.stringify({ login: nom }) });
     } catch (err) {
-      if (!/déjà pris/.test(err.message)) {
+      // 409 : le login existe deja, on se reconnecte simplement dessus
+      if (err.status !== 409) {
         setErreur(err.message);
         return;
       }
