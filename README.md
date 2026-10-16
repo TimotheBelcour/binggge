@@ -1,6 +1,7 @@
 # binggge
 
 Un suivi de séries : chercher une série, l'ajouter à sa liste, cocher les épisodes vus.
+Une série est « vue » quand tous ses épisodes le sont — cet état se déduit, il n'est jamais stocké.
 
 ## Démarrer
 
@@ -25,7 +26,8 @@ le conteneur directement sur le réseau Docker.
 ## Interface
 
 La page `web/index.html` est servie par l'API elle-même, à la racine (`/`) : on entre un login,
-on cherche une série, on l'ajoute à sa liste, on la coche quand on l'a vue, on la retire.
+on cherche une série, on l'ajoute à sa liste, on déplie ses épisodes pour cocher ceux qu'on a vus,
+on suit sa progression (« 7/26 épisodes »), et on la retire.
 Elle est écrite en React chargé depuis un CDN, sans étape de build — le fichier HTML est le
 livrable, l'image Docker l'embarque.
 
@@ -39,8 +41,13 @@ l'en-tête `X-User` (voir la section Authentification).
 - `POST /register` — crée un utilisateur à partir d'un `login` (`409` s'il existe déjà)
 - `GET /watchlist` — renvoie la liste de suivi de l'utilisateur (`401` sans en-tête `X-User`)
 - `POST /watchlist` — ajoute une série (`show_id`, `title`) à la liste de l'utilisateur
-- `PATCH /watchlist/:id` — marque une série vue ou non vue (`seen`, booléen)
+- `PATCH /watchlist/:id` — coche ou décoche **tous** les épisodes d'un coup (`seen`, booléen)
+- `GET /watchlist/:id/episodes` — les épisodes de la série (via TVMaze), chacun marqué vu ou non
+- `PUT /watchlist/:id/episodes/:episodeId` — coche ou décoche un épisode (`seen`, booléen)
 - `DELETE /watchlist/:id` — retire une série de la liste (`404` si elle appartient à quelqu'un d'autre)
+
+Les routes `/watchlist/:id/...` filtrent toujours sur l'utilisateur : viser l'identifiant d'un autre
+renvoie `404`, jamais le contenu de sa liste.
 
 ## Authentification
 
@@ -63,7 +70,8 @@ cd api && npm install && npm test
 ```
 
 Les tests s'exécutent sur la machine et joignent la base du conteneur via `DATABASE_URL`
-(défini dans `.env`, port `5433`).
+(défini dans `.env`, port `5433`). L'un d'eux interroge TVMaze pour récupérer une vraie liste
+d'épisodes : il échoue si l'API tierce est injoignable.
 
 ## Pipeline
 
@@ -107,5 +115,4 @@ Un ticket est fini quand les quatre conditions sont réunies :
 ## Ce qui n'existe pas encore
 
 - Pas de vraie authentification (voir ci-dessus)
-- Le suivi se fait série par série, pas épisode par épisode
 - Le déploiement ne gère pas les migrations : un changement de schéma s'applique à la main

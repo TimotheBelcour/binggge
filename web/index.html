@@ -67,6 +67,26 @@
   li .titre b { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   li .titre span { color: var(--doux); font-size: .875rem; }
   li.vue .titre b { color: var(--doux); text-decoration: line-through; }
+  li.serie { flex-wrap: wrap; }
+  .chevron {
+    background: transparent; border: 0; color: var(--doux);
+    padding: .2rem .4rem; font-size: .9rem; cursor: pointer;
+  }
+  .progression { color: var(--doux); font-size: .875rem; white-space: nowrap; }
+  .barre { width: 100%; height: 3px; background: var(--bord); border-radius: 2px; overflow: hidden; }
+  .barre i { display: block; height: 100%; background: var(--accent); }
+  .episodes { width: 100%; margin: .4rem 0 0; padding: .6rem 0 0; border-top: 1px solid var(--bord); }
+  .episodes h3 {
+    margin: .7rem 0 .3rem; font-size: .8rem; text-transform: uppercase;
+    letter-spacing: .06em; color: var(--doux);
+  }
+  .episodes h3:first-child { margin-top: 0; }
+  .episodes label {
+    display: flex; align-items: center; gap: .5rem;
+    padding: .2rem 0; font-size: .9rem; cursor: pointer;
+  }
+  .episodes label.vu span { color: var(--doux); text-decoration: line-through; }
+  .episodes code { color: var(--doux); font-size: .8rem; }
   .vide { color: var(--doux); font-style: italic; }
   .erreur { color: #f0a0a0; }
   header.moi { display: flex; align-items: baseline; gap: .75rem; margin-bottom: 2rem; }
@@ -174,19 +194,87 @@ function Recherche({ onAjout }) {
   `;
 }
 
-function Liste({ series, onBascule, onRetrait }) {
+function Episodes({ serie, version, onChangement }) {
+  const [episodes, setEpisodes] = useState(null);
+  const [erreur, setErreur] = useState(null);
+
+  useEffect(() => {
+    api(`/watchlist/${serie.id}/episodes`)
+      .then(setEpisodes)
+      .catch((err) => setErreur(err.message));
+    // `version` change quand on coche tout d'un coup : la liste depliee
+    // doit alors etre relue, sinon elle affiche un etat perime
+  }, [serie.id, version]);
+
+  async function basculer(episode) {
+    // On met a jour l'affichage tout de suite, le serveur suit
+    setEpisodes((liste) =>
+      liste.map((e) => (e.id === episode.id ? { ...e, seen: !e.seen } : e))
+    );
+    await api(`/watchlist/${serie.id}/episodes/${episode.id}`, {
+      method: "PUT",
+      body: JSON.stringify({ seen: !episode.seen }),
+    });
+    onChangement();
+  }
+
+  if (erreur) return html`<div class="episodes"><p class="erreur">${erreur}</p></div>`;
+  if (!episodes) return html`<div class="episodes"><p class="vide">Chargement…</p></div>`;
+
+  const saisons = [...new Set(episodes.map((e) => e.season))];
+
+  return html`
+    <div class="episodes">
+      ${saisons.map((saison) => html`
+        <div key=${saison}>
+          <h3>Saison ${saison}</h3>
+          ${episodes.filter((e) => e.season === saison).map((e) => html`
+            <label key=${e.id} class=${e.seen ? "vu" : ""}>
+              <input type="checkbox" checked=${e.seen} onChange=${() => basculer(e)} />
+              <code>S${String(e.season).padStart(2, "0")}E${String(e.number).padStart(2, "0")}</code>
+              <span>${e.name}</span>
+            </label>
+          `)}
+        </div>
+      `)}
+    </div>
+  `;
+}
+
+function Serie({ serie, version, onBascule, onRetrait, onChangement }) {
+  const [ouverte, setOuverte] = useState(false);
+  const total = serie.total;
+  const pourcent = total > 0 ? (serie.vus / total) * 100 : 0;
+
+  return html`
+    <li class=${`serie ${serie.seen ? "vue" : ""}`}>
+      <button class="chevron" onClick=${() => setOuverte(!ouverte)}
+              aria-label=${ouverte ? "Replier les épisodes" : "Déplier les épisodes"}>
+        ${ouverte ? "▾" : "▸"}
+      </button>
+      <div class="titre"><b>${serie.title}</b></div>
+      <span class="progression">
+        ${total ? `${serie.vus}/${total} épisodes` : `${serie.vus} épisode${serie.vus > 1 ? "s" : ""} vu${serie.vus > 1 ? "s" : ""}`}
+      </span>
+      <button class="discret" onClick=${() => onBascule(serie)}>
+        ${serie.seen ? "Tout décocher" : "Tout cocher"}
+      </button>
+      <button class="discret" onClick=${() => onRetrait(serie)}>Retirer</button>
+      ${total > 0 && html`<div class="barre"><i style=${{ width: `${pourcent}%` }}></i></div>`}
+      ${ouverte && html`<${Episodes} serie=${serie} version=${version} onChangement=${onChangement} />`}
+    </li>
+  `;
+}
+
+function Liste({ series, version, onBascule, onRetrait, onChangement }) {
   if (series.length === 0) {
     return html`<p class="vide">Votre liste est vide. Cherchez une série pour commencer.</p>`;
   }
   return html`
     <ul>
       ${series.map((s) => html`
-        <li key=${s.id} class=${s.seen ? "vue" : ""}>
-          <input type="checkbox" checked=${s.seen} onChange=${() => onBascule(s)}
-                 aria-label=${`Marquer ${s.title} comme vue`} />
-          <div class="titre"><b>${s.title}</b></div>
-          <button class="discret" onClick=${() => onRetrait(s)}>Retirer</button>
-        </li>
+        <${Serie} key=${s.id} serie=${s} version=${version} onBascule=${onBascule}
+                  onRetrait=${onRetrait} onChangement=${onChangement} />
       `)}
     </ul>
   `;
@@ -196,6 +284,8 @@ function App() {
   const [login, setLogin] = useState(() => localStorage.getItem("binggge_login"));
   const [series, setSeries] = useState([]);
   const [erreur, setErreur] = useState(null);
+  // Incremente par les actions qui touchent plusieurs episodes a la fois
+  const [version, setVersion] = useState(0);
 
   const recharger = useCallback(async () => {
     try {
@@ -221,6 +311,7 @@ function App() {
       method: "PATCH",
       body: JSON.stringify({ seen: !serie.seen }),
     });
+    setVersion((v) => v + 1);
     recharger();
   }
 
@@ -249,7 +340,8 @@ function App() {
             <${Recherche} onAjout=${ajouter} />
             <h2>Ma liste</h2>
             ${erreur && html`<p class="erreur">${erreur}</p>`}
-            <${Liste} series=${series} onBascule=${basculer} onRetrait=${retirer} />
+            <${Liste} series=${series} version=${version} onBascule=${basculer}
+                      onRetrait=${retirer} onChangement=${recharger} />
           `}
     </main>
   `;
