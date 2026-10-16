@@ -54,6 +54,8 @@ test("ajouter une série la fait apparaître dans /watchlist", async () => {
   assert.equal(liste.body.length, 1);
   assert.equal(liste.body[0].title, "Severance");
   assert.equal(liste.body[0].show_id, 44778);
+  assert.equal(liste.body[0].vus, 0);
+  assert.equal(liste.body[0].seen, false);
 });
 
 test("watchlist sans en-tête : 401", async () => {
@@ -61,21 +63,83 @@ test("watchlist sans en-tête : 401", async () => {
   assert.equal(r.status, 401);
 });
 
-test("marquer une série vue met à jour seen", async () => {
+test("cocher un épisode fait avancer la progression", async () => {
   const ajout = await request(app)
     .post("/watchlist")
     .set("X-User", login)
     .send({ show_id: 1371, title: "The Bear" });
 
-  const vu = await request(app)
+  const coche = await request(app)
+    .put(`/watchlist/${ajout.body.id}/episodes/999001`)
+    .set("X-User", login)
+    .send({ seen: true });
+  assert.equal(coche.status, 204);
+
+  let liste = await request(app).get("/watchlist").set("X-User", login);
+  assert.equal(liste.body.find((s) => s.id === ajout.body.id).vus, 1);
+
+  // Decocher le ramene a zero, et recocher deux fois ne compte qu'une
+  await request(app)
+    .put(`/watchlist/${ajout.body.id}/episodes/999001`)
+    .set("X-User", login)
+    .send({ seen: true });
+  liste = await request(app).get("/watchlist").set("X-User", login);
+  assert.equal(liste.body.find((s) => s.id === ajout.body.id).vus, 1);
+
+  await request(app)
+    .put(`/watchlist/${ajout.body.id}/episodes/999001`)
+    .set("X-User", login)
+    .send({ seen: false });
+  liste = await request(app).get("/watchlist").set("X-User", login);
+  assert.equal(liste.body.find((s) => s.id === ajout.body.id).vus, 0);
+});
+
+test("une série dont tous les épisodes sont vus est marquée vue", async () => {
+  // Ce test interroge TVMaze : c'est lui qui fournit la liste des episodes
+  const ajout = await request(app)
+    .post("/watchlist")
+    .set("X-User", login)
+    .send({ show_id: 44778, title: "House of the Dragon" });
+
+  const tout = await request(app)
     .patch(`/watchlist/${ajout.body.id}`)
     .set("X-User", login)
     .send({ seen: true });
-  assert.equal(vu.status, 200);
-  assert.equal(vu.body.seen, true);
+  assert.equal(tout.status, 200);
+  assert.equal(tout.body.seen, true);
+  assert.equal(tout.body.vus, tout.body.total);
+  assert.ok(tout.body.total > 0);
+
+  // Decocher un seul episode suffit a ce que la serie ne soit plus vue
+  const episodes = await request(app)
+    .get(`/watchlist/${ajout.body.id}/episodes`)
+    .set("X-User", login);
+  assert.equal(episodes.status, 200);
+  assert.equal(episodes.body[0].seen, true);
+  assert.ok(episodes.body[0].season >= 1);
+
+  await request(app)
+    .put(`/watchlist/${ajout.body.id}/episodes/${episodes.body[0].id}`)
+    .set("X-User", login)
+    .send({ seen: false });
 
   const liste = await request(app).get("/watchlist").set("X-User", login);
-  assert.equal(liste.body.find((s) => s.id === ajout.body.id).seen, true);
+  assert.equal(liste.body.find((s) => s.id === ajout.body.id).seen, false);
+});
+
+test("on ne peut pas cocher un épisode chez quelqu'un d'autre", async () => {
+  const autre = `${login}_autre`;
+  await request(app).post("/register").send({ login: autre });
+  const sienne = await request(app)
+    .post("/watchlist")
+    .set("X-User", autre)
+    .send({ show_id: 2, title: "Sa série" });
+
+  const r = await request(app)
+    .put(`/watchlist/${sienne.body.id}/episodes/999002`)
+    .set("X-User", login)
+    .send({ seen: true });
+  assert.equal(r.status, 404);
 });
 
 test("seen doit être un booléen", async () => {
@@ -120,7 +184,7 @@ test("on ne peut pas retirer la série de quelqu'un d'autre", async () => {
 
   // Elle est toujours dans la liste de son proprietaire
   const liste = await request(app).get("/watchlist").set("X-User", autre);
-  assert.equal(liste.body.length, 1);
+  assert.ok(liste.body.some((s) => s.id === sienne.body.id));
 });
 
 test("un titre vide est refusé", async () => {
