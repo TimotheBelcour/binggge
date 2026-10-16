@@ -12,9 +12,7 @@ services:
     environment:
       POSTGRES_DB: binggge
       POSTGRES_PASSWORD: ${DB_PASS}
-    volumes:
-      - pgdata:/var/lib/postgresql/data
-      # applique le schema automatiquement a la premiere creation du volume
-      - ./api/db/schema.sql:/docker-entrypoint-initdb.d/schema.sql:ro
+    # Volume nomme uniquement : le serveur interdit les montages de dossiers de l'hote
+    volumes: ["pgdata:/var/lib/postgresql/data"]
 volumes:
   pgdata:

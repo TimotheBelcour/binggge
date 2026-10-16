@@ -7,20 +7,20 @@ Un suivi de séries : chercher une série, l'ajouter à sa liste, cocher les ép
 ```
 cp .env.example .env   # puis choisir un mot de passe DB_PASS
 docker compose up -d --build
+docker compose exec -T db psql -U postgres binggge < api/db/schema.sql   # une seule fois
 ```
 
 Deux conteneurs démarrent : `api` (image construite depuis `api/Dockerfile`) et `db` (PostgreSQL 16).
-Le schéma `api/db/schema.sql` est appliqué automatiquement à la création du volume `pgdata`,
-et les données survivent à un `docker compose down` / `up`.
+Les données survivent à un `docker compose down` / `up` grâce au volume nommé `pgdata` ; le schéma
+n'est à appliquer qu'une fois par volume (`relation already exists` ensuite, c'est normal).
 
-En production l'API ne publie aucun port : Traefik la joint directement sur le réseau Docker.
-En local, `docker-compose.override.yml` la publie sur le port 3000 : ouvrez
-**http://localhost:3000** dans un navigateur pour utiliser l'interface.
+Ouvrez ensuite **http://localhost:3000** pour utiliser l'interface.
 
 Le mot de passe de la base vient du fichier `.env` (`DB_PASS`), **jamais versionné**.
-`docker-compose.override.yml` est chargé automatiquement en local : il publie l'API sur le port
-`3000` et la base sur le port `5433` (pour lancer les tests depuis la machine). Il n'est pas
-utilisé sur le serveur, où les commandes précisent `-f docker-compose.yml`.
+Ce même `.env` contient `COMPOSE_FILE`, qui ajoute `docker-compose.local.yml` au fichier principal :
+c'est lui qui publie l'API sur le port `3000` et la base sur le port `5433` (pour les tests).
+Sur le serveur, le `.env` ne contient que `DB_PASS`, donc **aucun port n'est publié** : Traefik joint
+le conteneur directement sur le réseau Docker.
 
 ## Interface
 
@@ -71,11 +71,29 @@ Les tests s'exécutent sur la machine et joignent la base du conteneur via `DATA
 
 1. **test** — PostgreSQL en service, schéma appliqué, `npm ci` puis `npm test`
 2. **build** — construit l'image `binggge-api:<sha>` et vérifie qu'elle répond sur `/health`
-3. **deploy** — *pas encore en place* : sur `main` uniquement, se connectera en SSH au serveur
-   pour lancer `docker compose up -d --build`. En attente des droits Docker sur le serveur.
+3. **deploy** — sur `main` uniquement : se connecte en SSH au serveur, fait un `git pull`, relance
+   les conteneurs avec `sudo binggge up -d --build`, puis vérifie que l'URL publique répond sur
+   `/health` avant de déclarer le déploiement réussi.
 
 `main` est protégée : une PR dont les checks `test` ou `build` sont rouges ne peut pas être mergée
 (preuve : `PIPELINE_BLOQUE.jpeg`).
+
+## En ligne
+
+L'application tourne sur `iut.cafeclaudie.fr` : **https://iut.cafeclaudie.fr/TimotheBelcour/**
+(état de l'API : `/TimotheBelcour/health`). La barre oblique finale est obligatoire : Traefik
+route sur le préfixe `/TimotheBelcour/` et le retire avant de transmettre à l'API.
+
+Le serveur n'autorise pas `docker` directement : les conteneurs se pilotent avec le wrapper
+`sudo binggge` (`up`, `down`, `ps`, `logs`, `exec`…). Les montages de dossiers de l'hôte y sont
+interdits, d'où le volume nommé et le schéma appliqué à la main :
+
+```
+ssh -i ~/.ssh/id_binggge TimotheBelcour@iut.cafeclaudie.fr
+sudo binggge ps
+sudo binggge logs --tail 50 api
+sudo binggge exec -T db psql -U postgres binggge < api/db/schema.sql   # une seule fois
+```
 
 ## Définition de « fini »
 
@@ -90,4 +108,4 @@ Un ticket est fini quand les quatre conditions sont réunies :
 
 - Pas de vraie authentification (voir ci-dessus)
 - Le suivi se fait série par série, pas épisode par épisode
-- Pas de déploiement automatisé : le job `deploy` attend les droits Docker sur le serveur
+- Le déploiement ne gère pas les migrations : un changement de schéma s'applique à la main

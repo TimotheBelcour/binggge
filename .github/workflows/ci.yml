@@ -46,3 +46,36 @@ jobs:
           docker run -d --name api -e DATABASE_URL=postgres://x:x@db:5432/binggge binggge-api:${GITHUB_SHA::7}
           sleep 3
           docker exec api wget -qO- localhost:3000/health
+
+  deploy:
+    needs: build
+    # Uniquement sur main : une PR ne deploie jamais
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    env:
+      LOGIN: ${{ vars.LOGIN }}
+    steps:
+      - name: Prepare la cle de deploiement
+        env:
+          SSH_DEPLOY_KEY: ${{ secrets.SSH_DEPLOY_KEY }}
+        run: |
+          mkdir -p ~/.ssh
+          printf '%s\n' "$SSH_DEPLOY_KEY" > ~/.ssh/id_deploy
+          chmod 600 ~/.ssh/id_deploy
+          ssh-keyscan iut.cafeclaudie.fr >> ~/.ssh/known_hosts 2>/dev/null
+      - name: Met en ligne
+        run: |
+          ssh -i ~/.ssh/id_deploy "$LOGIN@iut.cafeclaudie.fr" \
+            'cd ~ && git pull && sudo binggge up -d --build'
+      - name: Verifie /health depuis l'exterieur
+        run: |
+          # Le conteneur met quelques secondes a repondre apres un rebuild
+          for essai in 1 2 3 4 5 6 7 8 9 10; do
+            if curl -fsSL "https://iut.cafeclaudie.fr/$LOGIN/health" | tee /dev/stderr | grep -q '"ok"'; then
+              echo "en ligne"
+              exit 0
+            fi
+            sleep 5
+          done
+          echo "l'URL publique ne repond pas"
+          exit 1
