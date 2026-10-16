@@ -141,6 +141,62 @@ test("une série dont tous les épisodes sont vus est marquée vue", async () =>
   assert.equal(liste.body.find((s) => s.id === ajout.body.id).seen, false);
 });
 
+test("reprendre coche le prochain épisode non vu", async () => {
+  // Ce test interroge TVMaze : c'est lui qui donne l'ordre des episodes
+  const ajout = await request(app)
+    .post("/watchlist")
+    .set("X-User", login)
+    .send({ show_id: 44778, title: "House of the Dragon" });
+
+  const premier = await request(app)
+    .post(`/watchlist/${ajout.body.id}/episodes/next`)
+    .set("X-User", login);
+  assert.equal(premier.status, 201);
+  assert.equal(premier.body.season, 1);
+  assert.equal(premier.body.number, 1);
+
+  // Le suivant est bien le deuxieme, pas a nouveau le premier
+  const second = await request(app)
+    .post(`/watchlist/${ajout.body.id}/episodes/next`)
+    .set("X-User", login);
+  assert.equal(second.status, 201);
+  assert.equal(second.body.number, 2);
+
+  const liste = await request(app).get("/watchlist").set("X-User", login);
+  assert.equal(liste.body.find((s) => s.id === ajout.body.id).vus, 2);
+});
+
+test("reprendre une série terminée est refusé", async () => {
+  const ajout = await request(app)
+    .post("/watchlist")
+    .set("X-User", login)
+    .send({ show_id: 44778, title: "House of the Dragon" });
+
+  await request(app)
+    .patch(`/watchlist/${ajout.body.id}`)
+    .set("X-User", login)
+    .send({ seen: true });
+
+  const r = await request(app)
+    .post(`/watchlist/${ajout.body.id}/episodes/next`)
+    .set("X-User", login);
+  assert.equal(r.status, 409);
+});
+
+test("on ne peut pas reprendre la série de quelqu'un d'autre", async () => {
+  const autre = `${login}_autre`;
+  await request(app).post("/register").send({ login: autre });
+  const sienne = await request(app)
+    .post("/watchlist")
+    .set("X-User", autre)
+    .send({ show_id: 3, title: "Sa série" });
+
+  const r = await request(app)
+    .post(`/watchlist/${sienne.body.id}/episodes/next`)
+    .set("X-User", login);
+  assert.equal(r.status, 404);
+});
+
 test("on ne peut pas cocher un épisode chez quelqu'un d'autre", async () => {
   const autre = `${login}_autre`;
   await request(app).post("/register").send({ login: autre });

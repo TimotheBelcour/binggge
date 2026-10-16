@@ -29,6 +29,7 @@ La page `web/index.html` est servie par l'API elle-même, à la racine (`/`) : o
 la liste occupe le haut de la page et la recherche s'ouvre dans un panneau, qui se referme dès
 qu'une série est ajoutée. On déplie une série pour lire sa fiche (année, genres, statut, note,
 synopsis) et cocher les épisodes vus, on suit sa progression (« 7/26 épisodes »), on la retire.
+Le bouton « Reprendre » coche le prochain épisode non vu sans avoir à déplier la série.
 Les fiches viennent de `GET /shows/:id`, chargées à la demande et gardées en mémoire.
 
 L'interface suit le thème clair ou sombre du système, s'adapte au mobile, désactive les boutons
@@ -50,6 +51,7 @@ l'en-tête `X-User` (voir la section Authentification).
 - `PATCH /watchlist/:id` — coche ou décoche **tous** les épisodes d'un coup (`seen`, booléen)
 - `GET /watchlist/:id/episodes` — les épisodes de la série (via TVMaze), chacun marqué vu ou non
 - `PUT /watchlist/:id/episodes/:episodeId` — coche ou décoche un épisode (`seen`, booléen)
+- `POST /watchlist/:id/episodes/next` — coche le prochain épisode non vu et le renvoie (`409` si la série est terminée)
 - `DELETE /watchlist/:id` — retire une série de la liste (`404` si elle appartient à quelqu'un d'autre)
 
 Les routes `/watchlist/:id/...` filtrent toujours sur l'utilisateur : viser l'identifiant d'un autre

@@ -166,6 +166,15 @@
   /* Sans synopsis, la fiche seule doit garder cet ecart avec les saisons */
   .fiche:last-of-type { margin-bottom: 1.1rem; }
 
+  /* L'emplacement est toujours reserve : l'apparition du message ne doit pas
+     decaler la liste sous le curseur de l'utilisateur */
+  .zone-message { min-height: 2.6rem; }
+  .message {
+    margin: 0 0 .7rem; padding: .5rem .7rem;
+    background: var(--carte); border: 1px solid var(--bord);
+    border-left: 3px solid var(--accent); border-radius: .4rem;
+    font-size: .9rem; color: var(--doux);
+  }
   .vide { color: var(--doux); font-style: italic; margin: .4rem 0; }
   .erreur { color: var(--danger); margin: .4rem 0; }
 
@@ -429,7 +438,7 @@ function Episodes({ serie, version, onChangement }) {
   `;
 }
 
-function Serie({ serie, version, onBascule, onRetrait, onChangement }) {
+function Serie({ serie, version, onBascule, onRetrait, onReprise, onChangement }) {
   const [ouverte, setOuverte] = useState(false);
   const [occupee, setOccupee] = useState(false);
   const fiche = useFiche(serie.show_id);
@@ -468,6 +477,11 @@ function Serie({ serie, version, onBascule, onRetrait, onChangement }) {
           <b>${serie.title}</b>
           <span class="progression">${sousTitre}</span>
         </div>
+        ${!serie.seen && html`
+          <button disabled=${occupee} onClick=${() => action(() => onReprise(serie))}>
+            ${occupee ? "…" : "Reprendre"}
+          </button>
+        `}
         <button class="discret" disabled=${occupee}
                 onClick=${() => action(() => onBascule(serie))}>
           ${serie.seen ? "Tout décocher" : "Tout cocher"}
@@ -481,7 +495,7 @@ function Serie({ serie, version, onBascule, onRetrait, onChangement }) {
   `;
 }
 
-function Liste({ series, version, onBascule, onRetrait, onChangement }) {
+function Liste({ series, version, onBascule, onRetrait, onReprise, onChangement }) {
   if (series.length === 0) {
     return html`<p class="vide">Rien pour l'instant. Cliquez sur « Ajouter une série » pour commencer.</p>`;
   }
@@ -489,7 +503,7 @@ function Liste({ series, version, onBascule, onRetrait, onChangement }) {
     <ul>
       ${series.map((s) => html`
         <${Serie} key=${s.id} serie=${s} version=${version} onBascule=${onBascule}
-                  onRetrait=${onRetrait} onChangement=${onChangement} />
+                  onRetrait=${onRetrait} onReprise=${onReprise} onChangement=${onChangement} />
       `)}
     </ul>
   `;
@@ -502,6 +516,7 @@ function App() {
   // Incremente par les actions qui touchent plusieurs episodes a la fois
   const [version, setVersion] = useState(0);
   const [rechercheOuverte, setRechercheOuverte] = useState(false);
+  const [message, setMessage] = useState(null);
 
   const recharger = useCallback(async () => {
     try {
@@ -513,6 +528,12 @@ function App() {
   }, []);
 
   useEffect(() => { if (login) recharger(); }, [login, recharger]);
+
+  useEffect(() => {
+    if (!message) return;
+    const minuteur = setTimeout(() => setMessage(null), 4000);
+    return () => clearTimeout(minuteur);
+  }, [message]);
 
   async function ajouter(serie) {
     await api("/watchlist", {
@@ -527,6 +548,19 @@ function App() {
       method: "PATCH",
       body: JSON.stringify({ seen: !serie.seen }),
     });
+    setVersion((v) => v + 1);
+    recharger();
+  }
+
+  async function reprendre(serie) {
+    try {
+      const episode = await api(`/watchlist/${serie.id}/episodes/next`, { method: "POST" });
+      const code = `S${String(episode.season).padStart(2, "0")}E${String(episode.number).padStart(2, "0")}`;
+      setMessage(`${code} · ${episode.name} marqué vu`);
+    } catch (err) {
+      setMessage(err.message);
+    }
+    // La liste depliee doit refleter le nouvel episode coche
     setVersion((v) => v + 1);
     recharger();
   }
@@ -571,8 +605,11 @@ function App() {
               </div>
             `}
             ${erreur && html`<p class="erreur">${erreur}</p>`}
+            <div class="zone-message">
+              ${message && html`<p class="message" role="status">${message}</p>`}
+            </div>
             <${Liste} series=${series} version=${version} onBascule=${basculer}
-                      onRetrait=${retirer} onChangement=${recharger} />
+                      onRetrait=${retirer} onReprise=${reprendre} onChangement=${recharger} />
           `}
     </main>
   `;

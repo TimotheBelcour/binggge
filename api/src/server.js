@@ -236,6 +236,39 @@ app.get("/watchlist/:id/episodes", user, async (req, res) => {
   res.json(episodes.map((e) => ({ ...e, seen: vus.has(e.id) })));
 });
 
+// Coche le prochain episode non vu : c'est l'API qui sait ce que
+// « prochain » veut dire, pas l'interface
+app.post("/watchlist/:id/episodes/next", user, async (req, res) => {
+  const serie = await serieDeLUtilisateur(req);
+  if (!serie) {
+    return res.status(404).json({ error: "série introuvable" });
+  }
+
+  const episodes = await episodesDeLaSerie(serie.show_id);
+  await db.query("UPDATE watchlist SET episodes_total = $1 WHERE id = $2", [
+    episodes.length,
+    serie.id,
+  ]);
+
+  const { rows } = await db.query(
+    "SELECT episode_id FROM episodes_vus WHERE watchlist_id = $1",
+    [serie.id]
+  );
+  const vus = new Set(rows.map((r) => r.episode_id));
+  const prochain = episodes.find((e) => !vus.has(e.id));
+
+  if (!prochain) {
+    return res.status(409).json({ error: "tous les épisodes sont déjà vus" });
+  }
+
+  await db.query(
+    `INSERT INTO episodes_vus(watchlist_id, episode_id) VALUES($1, $2)
+     ON CONFLICT DO NOTHING`,
+    [serie.id, prochain.id]
+  );
+  res.status(201).json(prochain);
+});
+
 // Coche ou decoche un episode
 app.put("/watchlist/:id/episodes/:episodeId", user, async (req, res) => {
   const { seen } = req.body || {};
