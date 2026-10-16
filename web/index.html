@@ -113,9 +113,31 @@
   }
   .chevron {
     background: transparent; border: 0; color: var(--doux);
-    padding: .3rem .35rem; line-height: 1; cursor: pointer; flex: none;
+    /* 44px de cible : la taille d'un bout de doigt */
+    min-width: 2.75rem; min-height: 2.75rem;
+    display: flex; align-items: center; justify-content: center;
+    line-height: 1; cursor: pointer; flex: none;
   }
-  .chevron:hover { color: var(--texte); background: transparent; }
+  button.chevron:hover { color: var(--texte); background: transparent; }
+  .chevron span { display: block; transition: transform .2s; }
+  li.ouverte .chevron span { transform: rotate(90deg); }
+
+  .depliable { cursor: pointer; }
+
+  .section-terminees { margin-top: 1.4rem; }
+  .replier {
+    display: flex; align-items: center; gap: .5rem;
+    width: 100%; padding: .55rem .2rem;
+    background: transparent; border: 0; border-top: 1px solid var(--bord);
+    border-radius: 0; color: var(--doux);
+    font-size: .8rem; text-transform: uppercase; letter-spacing: .07em;
+  }
+  /* button:hover:not(:disabled) est plus specifique que .replier:hover :
+     on nomme l'element pour reprendre la main */
+  button.replier:hover { background: transparent; color: var(--texte); }
+  .chevron-inline { display: inline-block; transition: transform .2s; }
+  .chevron-inline.ouvert { transform: rotate(90deg); }
+  .section-terminees ul { margin-top: .5rem; }
   .progression { color: var(--doux); font-size: .85rem; }
   .prochain { color: var(--texte); }
   li.vue .prochain { color: var(--doux); }
@@ -475,13 +497,20 @@ function Serie({ serie, version, onBascule, onRetrait, onReprise, onChangement }
       ? "Terminée"
       : null;
 
+  // Les boutons d'action vivent dans la carte cliquable : sans ce garde,
+  // cliquer « Retirer » deplierait aussi la serie
+  function basculerOuverture(e) {
+    if (e.target.closest("button, a, input, label")) return;
+    setOuverte(!ouverte);
+  }
+
   return html`
-    <li class=${`serie ${serie.seen ? "vue" : ""}`}>
-      <div class="haut">
+    <li class=${`serie ${serie.seen ? "vue" : ""} ${ouverte ? "ouverte" : ""}`}>
+      <div class="haut depliable" onClick=${basculerOuverture}>
         <button class="chevron" onClick=${() => setOuverte(!ouverte)}
                 aria-expanded=${ouverte}
-                aria-label=${ouverte ? "Replier les épisodes" : "Déplier les épisodes"}>
-          ${ouverte ? "▾" : "▸"}
+                aria-label=${`${ouverte ? "Replier" : "Déplier"} les épisodes de ${serie.title}`}>
+          <span aria-hidden="true">▸</span>
         </button>
         ${fiche && fiche.image
           ? html`<img class="affiche" src=${fiche.image} alt="" loading="lazy" />`
@@ -513,16 +542,39 @@ function Serie({ serie, version, onBascule, onRetrait, onReprise, onChangement }
 }
 
 function Liste({ series, version, onBascule, onRetrait, onReprise, onChangement }) {
+  const [terminéesVisibles, setTerminéesVisibles] = useState(false);
+
   if (series.length === 0) {
     return html`<p class="vide">Rien pour l'instant. Cliquez sur « Ajouter une série » pour commencer.</p>`;
   }
-  return html`
+
+  const enCours = series.filter((s) => !s.seen);
+  const terminees = series.filter((s) => s.seen);
+
+  const cartes = (liste) => html`
     <ul>
-      ${series.map((s) => html`
+      ${liste.map((s) => html`
         <${Serie} key=${s.id} serie=${s} version=${version} onBascule=${onBascule}
                   onRetrait=${onRetrait} onReprise=${onReprise} onChangement=${onChangement} />
       `)}
     </ul>
+  `;
+
+  return html`
+    ${enCours.length > 0 && cartes(enCours)}
+    ${enCours.length === 0 && html`
+      <p class="vide">Tout est à jour : aucune série en cours.</p>
+    `}
+    ${terminees.length > 0 && html`
+      <div class="section-terminees">
+        <button class="replier" onClick=${() => setTerminéesVisibles(!terminéesVisibles)}
+                aria-expanded=${terminéesVisibles}>
+          <span class="chevron-inline ${terminéesVisibles ? "ouvert" : ""}" aria-hidden="true">▸</span>
+          Terminées (${terminees.length})
+        </button>
+        ${terminéesVisibles && cartes(terminees)}
+      </div>
+    `}
   `;
 }
 
