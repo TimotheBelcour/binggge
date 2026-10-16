@@ -2,6 +2,7 @@
 const path = require("node:path");
 const express = require("express");
 const db = require("./db");
+const tvmaze = require("./tvmaze");
 
 const app = express();
 app.use(express.json());
@@ -20,68 +21,20 @@ app.get("/health", (req, res) => {
 // Recherche des series via l'API TVMaze
 // On ne renvoie jamais la reponse brute de l'API tierce : on filtre les champs utiles
 app.get("/shows", async (req, res) => {
-  const q = req.query.q || "";
-  const reponse = await fetch(`https://api.tvmaze.com/search/shows?q=${encodeURIComponent(q)}`);
-  const resultats = await reponse.json();
-
-  const series = resultats.map(({ show }) => ({
-    id: show.id,
-    title: show.name,
-    year: show.premiered ? show.premiered.slice(0, 4) : null,
-    image: show.image ? show.image.medium : null,
-  }));
-
-  res.json(series);
+  res.json(await tvmaze.rechercher(req.query.q || ""));
 });
-
-// Le synopsis de TVMaze arrive en HTML : on le reduit a du texte avant de le
-// transmettre. On ne renvoie jamais tel quel ce qu'une API tierce nous donne.
-function texteBrut(html) {
-  if (!html) return null;
-  return html
-    .replace(/<[^>]*>/g, "")
-    .replace(/&nbsp;/g, " ")
-    .replace(/&amp;/g, "&")
-    .replace(/&quot;/g, '"')
-    .replace(/&#39;/g, "'")
-    .replace(/&lt;/g, "<")
-    .replace(/&gt;/g, ">")
-    .trim();
-}
 
 // Fiche d'une serie : affiche, synopsis, genres
 app.get("/shows/:id", async (req, res) => {
-  const reponse = await fetch(`https://api.tvmaze.com/shows/${encodeURIComponent(req.params.id)}`);
-  if (!reponse.ok) {
-    return res.status(404).json({ error: "série introuvable" });
+  try {
+    res.json(await tvmaze.fiche(req.params.id));
+  } catch (err) {
+    if (err.statut === 404) {
+      return res.status(404).json({ error: "série introuvable" });
+    }
+    throw err;
   }
-  const show = await reponse.json();
-  res.json({
-    id: show.id,
-    title: show.name,
-    year: show.premiered ? show.premiered.slice(0, 4) : null,
-    image: show.image ? show.image.medium : null,
-    summary: texteBrut(show.summary),
-    genres: show.genres || [],
-    status: show.status || null,
-    rating: show.rating ? show.rating.average : null,
-  });
 });
-
-// Episodes d'une serie chez TVMaze, reduits aux champs utiles
-async function episodesDeLaSerie(showId) {
-  const reponse = await fetch(`https://api.tvmaze.com/shows/${showId}/episodes`);
-  if (!reponse.ok) {
-    throw Object.assign(new Error("TVMaze ne repond pas"), { tvmaze: true });
-  }
-  const episodes = await reponse.json();
-  return episodes.map((e) => ({
-    id: e.id,
-    season: e.season,
-    number: e.number,
-    name: e.name,
-  }));
-}
 
 // L'etat d'une serie se deduit de ses episodes vus : il n'est jamais stocke.
 const REQUETE_LISTE = `
@@ -190,7 +143,7 @@ app.patch("/watchlist/:id", user, async (req, res) => {
   }
 
   if (seen) {
-    const episodes = await episodesDeLaSerie(serie.show_id);
+    const episodes = await tvmaze.episodes(serie.show_id);
     await db.query("UPDATE watchlist SET episodes_total = $1 WHERE id = $2", [
       episodes.length,
       serie.id,
@@ -220,7 +173,7 @@ app.get("/watchlist/:id/episodes", user, async (req, res) => {
     return res.status(404).json({ error: "série introuvable" });
   }
 
-  const episodes = await episodesDeLaSerie(serie.show_id);
+  const episodes = await tvmaze.episodes(serie.show_id);
   // On en profite pour memoriser le total : c'est lui qui rend l'etat deductible
   await db.query("UPDATE watchlist SET episodes_total = $1 WHERE id = $2", [
     episodes.length,
@@ -244,7 +197,7 @@ app.post("/watchlist/:id/episodes/next", user, async (req, res) => {
     return res.status(404).json({ error: "série introuvable" });
   }
 
-  const episodes = await episodesDeLaSerie(serie.show_id);
+  const episodes = await tvmaze.episodes(serie.show_id);
   await db.query("UPDATE watchlist SET episodes_total = $1 WHERE id = $2", [
     episodes.length,
     serie.id,
