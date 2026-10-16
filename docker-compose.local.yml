@@ -1,0 +1,9 @@
+# Surcouche de developpement, jamais utilisee sur le serveur.
+# Elle n'est pas chargee automatiquement : c'est COMPOSE_FILE, dans le .env local,
+# qui la combine au fichier principal (voir .env.example).
+# Publie l'API sur 3000 pour ouvrir l'interface, et la base sur 5433 pour `npm test`.
+services:
+  api:
+    ports: ["3000:3000"]
+  db:
+    ports: ["5433:5432"]
