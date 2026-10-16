@@ -26,9 +26,10 @@ le conteneur directement sur le réseau Docker.
 ## Interface
 
 La page `web/index.html` est servie par l'API elle-même, à la racine (`/`) : on entre un login,
-on cherche une série, on l'ajoute à sa liste, on déplie ses épisodes pour cocher ceux qu'on a vus,
-on suit sa progression (« 7/26 épisodes »), et on la retire. Chaque série de la liste affiche son
-affiche et ses genres, chargés à la demande depuis `GET /shows/:id` et gardés en mémoire.
+la liste occupe le haut de la page et la recherche s'ouvre dans un panneau, qui se referme dès
+qu'une série est ajoutée. On déplie une série pour lire sa fiche (année, genres, statut, note,
+synopsis) et cocher les épisodes vus, on suit sa progression (« 7/26 épisodes »), on la retire.
+Les fiches viennent de `GET /shows/:id`, chargées à la demande et gardées en mémoire.
 
 L'interface suit le thème clair ou sombre du système, s'adapte au mobile, désactive les boutons
 pendant les envois et respecte `prefers-reduced-motion`.

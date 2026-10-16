@@ -142,6 +142,30 @@
   .episodes label.vu span { color: var(--doux); text-decoration: line-through; }
   .episodes code { color: var(--doux); font-size: .78rem; flex: none; }
 
+  .barre-titre {
+    display: flex; align-items: baseline; justify-content: space-between;
+    gap: 1rem; margin: 2.4rem 0 .8rem;
+  }
+  .barre-titre h2 { margin: 0; }
+  .panneau {
+    padding: .9rem;
+    background: var(--carte);
+    border: 1px solid var(--bord);
+    border-radius: var(--rayon);
+    margin-bottom: 1rem;
+  }
+  .panneau ul { margin-top: .7rem; }
+  .panneau li { background: var(--fond); }
+
+  .fiche { font-size: .9rem; color: var(--doux); margin: 0 0 .2rem; }
+  .fiche .note { color: var(--accent); font-weight: 600; }
+  .synopsis {
+    margin: .5rem 0 1.1rem; font-size: .92rem; color: var(--doux);
+    max-width: 44rem;
+  }
+  /* Sans synopsis, la fiche seule doit garder cet ecart avec les saisons */
+  .fiche:last-of-type { margin-bottom: 1.1rem; }
+
   .vide { color: var(--doux); font-style: italic; margin: .4rem 0; }
   .erreur { color: var(--danger); margin: .4rem 0; }
 
@@ -270,7 +294,7 @@ function Connexion({ onConnecte }) {
   `;
 }
 
-function Recherche({ onAjout, dejaDansLaListe }) {
+function Recherche({ onAjout, onAjoutTermine, dejaDansLaListe }) {
   const [q, setQ] = useState("");
   const [resultats, setResultats] = useState(null);
   const [cherche, setCherche] = useState(false);
@@ -296,6 +320,8 @@ function Recherche({ onAjout, dejaDansLaListe }) {
     setEnCours(serie.id);
     try {
       await onAjout(serie);
+      // Le panneau se referme : la serie ajoutee est deja visible dans la liste
+      onAjoutTermine();
     } finally {
       setEnCours(null);
     }
@@ -304,7 +330,8 @@ function Recherche({ onAjout, dejaDansLaListe }) {
   return html`
     <form onSubmit=${chercher}>
       <input value=${q} onInput=${(e) => setQ(e.target.value)}
-             placeholder="Chercher une série…" aria-label="Chercher une série" />
+             placeholder="Chercher une série…" aria-label="Chercher une série"
+             ref=${(el) => el && el.focus()} />
       <button type="submit" disabled=${cherche || !q.trim()}>
         ${cherche ? "…" : "Chercher"}
       </button>
@@ -348,6 +375,7 @@ function Recherche({ onAjout, dejaDansLaListe }) {
 function Episodes({ serie, version, onChangement }) {
   const [episodes, setEpisodes] = useState(null);
   const [erreur, setErreur] = useState(null);
+  const fiche = useFiche(serie.show_id);
 
   useEffect(() => {
     api(`/watchlist/${serie.id}/episodes`)
@@ -376,6 +404,15 @@ function Episodes({ serie, version, onChangement }) {
 
   return html`
     <div class="episodes">
+      ${fiche && html`
+        <p class="fiche">
+          ${fiche.year || "année inconnue"}
+          ${fiche.genres.length > 0 && ` · ${fiche.genres.join(", ")}`}
+          ${fiche.status && ` · ${fiche.status === "Ended" ? "terminée" : "en cours"}`}
+          ${fiche.rating && html` · <span class="note">${fiche.rating}/10</span>`}
+        </p>
+      `}
+      ${fiche && fiche.summary && html`<p class="synopsis">${fiche.summary}</p>`}
       ${saisons.map((saison) => html`
         <div key=${saison}>
           <h3>Saison ${saison}</h3>
@@ -446,7 +483,7 @@ function Serie({ serie, version, onBascule, onRetrait, onChangement }) {
 
 function Liste({ series, version, onBascule, onRetrait, onChangement }) {
   if (series.length === 0) {
-    return html`<p class="vide">Rien pour l'instant. Cherchez une série ci-dessus pour la suivre.</p>`;
+    return html`<p class="vide">Rien pour l'instant. Cliquez sur « Ajouter une série » pour commencer.</p>`;
   }
   return html`
     <ul>
@@ -464,6 +501,7 @@ function App() {
   const [erreur, setErreur] = useState(null);
   // Incremente par les actions qui touchent plusieurs episodes a la fois
   const [version, setVersion] = useState(0);
+  const [rechercheOuverte, setRechercheOuverte] = useState(false);
 
   const recharger = useCallback(async () => {
     try {
@@ -498,6 +536,10 @@ function App() {
     recharger();
   }
 
+  function ajoutTermine() {
+    setRechercheOuverte(false);
+  }
+
   function sortir() {
     localStorage.removeItem("binggge_login");
     setLogin(null);
@@ -515,10 +557,19 @@ function App() {
               <span>Connecté comme <b>${login}</b></span>
               <button class="discret" onClick=${sortir}>Changer</button>
             </header>
-            <h2>Chercher</h2>
-            <${Recherche} onAjout=${ajouter}
-                          dejaDansLaListe=${(showId) => series.some((s) => s.show_id === showId)} />
-            <h2>Ma liste</h2>
+            <div class="barre-titre">
+              <h2>Ma liste</h2>
+              <button onClick=${() => setRechercheOuverte(!rechercheOuverte)}
+                      aria-expanded=${rechercheOuverte}>
+                ${rechercheOuverte ? "Fermer" : "Ajouter une série"}
+              </button>
+            </div>
+            ${rechercheOuverte && html`
+              <div class="panneau">
+                <${Recherche} onAjout=${ajouter} onAjoutTermine=${ajoutTermine}
+                              dejaDansLaListe=${(showId) => series.some((s) => s.show_id === showId)} />
+              </div>
+            `}
             ${erreur && html`<p class="erreur">${erreur}</p>`}
             <${Liste} series=${series} version=${version} onBascule=${basculer}
                       onRetrait=${retirer} onChangement=${recharger} />
