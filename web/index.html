@@ -116,7 +116,9 @@
     padding: .3rem .35rem; line-height: 1; cursor: pointer; flex: none;
   }
   .chevron:hover { color: var(--texte); background: transparent; }
-  .progression { color: var(--doux); font-size: .85rem; white-space: nowrap; }
+  .progression { color: var(--doux); font-size: .85rem; }
+  .prochain { color: var(--texte); }
+  li.vue .prochain { color: var(--doux); }
   .barre {
     width: 100%; height: 3px; margin-top: .55rem;
     background: var(--bord); border-radius: 2px; overflow: hidden;
@@ -241,6 +243,11 @@ async function api(chemin, options = {}) {
 // Les fiches TVMaze ne changent pas d'une seconde a l'autre : on les garde
 // en memoire pour ne pas les redemander a chaque rendu
 const fiches = new Map();
+
+// S01E02 : le meme format dans la liste et dans les episodes deplies
+function code(episode) {
+  return `S${String(episode.season).padStart(2, "0")}E${String(episode.number).padStart(2, "0")}`;
+}
 
 function useFiche(showId) {
   const [fiche, setFiche] = useState(() => fiches.get(showId) || null);
@@ -428,7 +435,7 @@ function Episodes({ serie, version, onChangement }) {
           ${episodes.filter((e) => e.season === saison).map((e) => html`
             <label key=${e.id} class=${e.seen ? "vu" : ""}>
               <input type="checkbox" checked=${e.seen} onChange=${() => basculer(e)} />
-              <code>S${String(e.season).padStart(2, "0")}E${String(e.number).padStart(2, "0")}</code>
+              <code>${code(e)}</code>
               <span>${e.name}</span>
             </label>
           `)}
@@ -454,13 +461,19 @@ function Serie({ serie, version, onBascule, onRetrait, onReprise, onChangement }
     }
   }
 
-  const sousTitre = total
+  const progression = total
     ? `${serie.vus}/${total} épisodes`
     : serie.vus > 0
       ? `${serie.vus} épisode${serie.vus > 1 ? "s" : ""} vu${serie.vus > 1 ? "s" : ""}`
       : fiche && fiche.genres.length > 0
         ? fiche.genres.slice(0, 2).join(" · ")
-        : "Déplier pour voir les épisodes";
+        : null;
+
+  const prochain = serie.next
+    ? `${code(serie.next)} · ${serie.next.name}`
+    : serie.seen
+      ? "Terminée"
+      : null;
 
   return html`
     <li class=${`serie ${serie.seen ? "vue" : ""}`}>
@@ -475,7 +488,11 @@ function Serie({ serie, version, onBascule, onRetrait, onReprise, onChangement }
           : html`<div class=${`affiche ${fiche ? "vide" : "squelette"}`}></div>`}
         <div class="titre">
           <b>${serie.title}</b>
-          <span class="progression">${sousTitre}</span>
+          <span class="progression">
+            ${progression}
+            ${progression && prochain && " · "}
+            ${prochain && html`<span class="prochain">${prochain}</span>`}
+          </span>
         </div>
         ${!serie.seen && html`
           <button disabled=${occupee} onClick=${() => action(() => onReprise(serie))}>
@@ -555,8 +572,7 @@ function App() {
   async function reprendre(serie) {
     try {
       const episode = await api(`/watchlist/${serie.id}/episodes/next`, { method: "POST" });
-      const code = `S${String(episode.season).padStart(2, "0")}E${String(episode.number).padStart(2, "0")}`;
-      setMessage(`${code} · ${episode.name} marqué vu`);
+      setMessage(`${code(episode)} · ${episode.name} marqué vu`);
     } catch (err) {
       setMessage(err.message);
     }

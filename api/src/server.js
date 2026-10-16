@@ -85,13 +85,32 @@ const user = async (req, res, next) => {
   next();
 };
 
+// Le prochain episode non vu d'une serie, ou null si on ne peut pas le savoir.
+// Une panne de TVMaze ne doit jamais empecher la liste de s'afficher.
+async function prochainEpisode(serie) {
+  if (serie.seen) return null;
+  try {
+    const episodes = await tvmaze.episodesEnCache(serie.show_id);
+    const { rows } = await db.query(
+      "SELECT episode_id FROM episodes_vus WHERE watchlist_id = $1",
+      [serie.id]
+    );
+    const vus = new Set(rows.map((r) => r.episode_id));
+    return episodes.find((e) => !vus.has(e.id)) || null;
+  } catch {
+    return null;
+  }
+}
+
 // Liste de suivi de l'utilisateur courant
 app.get("/watchlist", user, async (req, res) => {
   const { rows } = await db.query(
     `${REQUETE_LISTE} GROUP BY w.id ORDER BY w.id`,
     [req.user.id]
   );
-  res.json(rows);
+  // En parallele : dix series ne doivent pas coûter dix attentes successives
+  const prochains = await Promise.all(rows.map(prochainEpisode));
+  res.json(rows.map((serie, i) => ({ ...serie, next: prochains[i] })));
 });
 
 // Ajout d'une serie a la liste de suivi

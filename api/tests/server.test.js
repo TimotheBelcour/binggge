@@ -14,7 +14,11 @@ const EPISODES = [
   { id: 903, season: 2, number: 1, name: "La reprise" },
 ];
 
-tvmaze.episodes = async () => EPISODES;
+let appelsEpisodes = 0;
+tvmaze.episodes = async () => {
+  appelsEpisodes += 1;
+  return EPISODES;
+};
 tvmaze.fiche = async (id) => {
   if (String(id) === "999999999") {
     throw Object.assign(new Error("inconnue"), { statut: 404 });
@@ -33,6 +37,12 @@ tvmaze.fiche = async (id) => {
 
 // Un login unique par execution pour ne pas dependre de l'etat de la base
 const login = `test_${Date.now()}`;
+
+test.beforeEach(() => {
+  // Chaque test part d'un cache vide : sinon l'ordre des tests change le resultat
+  tvmaze.viderCache();
+  appelsEpisodes = 0;
+});
 
 test.after(async () => {
   // Nettoyage : on retire ce que les tests ont cree, puis on ferme le pool
@@ -171,6 +181,74 @@ test("une série dont tous les épisodes sont vus est marquée vue", async () =>
 
   const liste = await request(app).get("/watchlist").set("X-User", login);
   assert.equal(liste.body.find((s) => s.id === ajout.body.id).seen, false);
+});
+
+test("la liste annonce le prochain épisode à regarder", async () => {
+  const ajout = await request(app)
+    .post("/watchlist")
+    .set("X-User", login)
+    .send({ show_id: 777, title: "Série du prochain" });
+
+  let liste = await request(app).get("/watchlist").set("X-User", login);
+  let serie = liste.body.find((s) => s.id === ajout.body.id);
+  assert.deepStrictEqual(serie.next, EPISODES[0]);
+
+  // Apres en avoir vu un, le prochain avance
+  await request(app)
+    .post(`/watchlist/${ajout.body.id}/episodes/next`)
+    .set("X-User", login);
+
+  liste = await request(app).get("/watchlist").set("X-User", login);
+  serie = liste.body.find((s) => s.id === ajout.body.id);
+  assert.deepStrictEqual(serie.next, EPISODES[1]);
+
+  // Une serie terminee n'a plus de prochain episode
+  await request(app)
+    .patch(`/watchlist/${ajout.body.id}`)
+    .set("X-User", login)
+    .send({ seen: true });
+
+  liste = await request(app).get("/watchlist").set("X-User", login);
+  serie = liste.body.find((s) => s.id === ajout.body.id);
+  assert.equal(serie.seen, true);
+  assert.equal(serie.next, null);
+});
+
+test("le cache évite de redemander les épisodes à TVMaze", async () => {
+  await request(app)
+    .post("/watchlist")
+    .set("X-User", login)
+    .send({ show_id: 778, title: "Série en cache" });
+
+  await request(app).get("/watchlist").set("X-User", login);
+  const apresPremier = appelsEpisodes;
+  assert.ok(apresPremier > 0, "le premier affichage doit interroger TVMaze");
+
+  await request(app).get("/watchlist").set("X-User", login);
+  assert.equal(appelsEpisodes, apresPremier, "le second affichage doit lire le cache");
+});
+
+test("une panne de TVMaze n'empêche pas la liste de s'afficher", async () => {
+  const vrai = tvmaze.episodes;
+  tvmaze.episodes = async () => {
+    throw new Error("TVMaze est injoignable");
+  };
+  tvmaze.viderCache();
+
+  try {
+    const ajout = await request(app)
+      .post("/watchlist")
+      .set("X-User", login)
+      .send({ show_id: 779, title: "Série sans réseau" });
+
+    const liste = await request(app).get("/watchlist").set("X-User", login);
+    assert.equal(liste.status, 200);
+    const serie = liste.body.find((s) => s.id === ajout.body.id);
+    assert.equal(serie.next, null);
+    assert.equal(serie.title, "Série sans réseau");
+  } finally {
+    tvmaze.episodes = vrai;
+  }
 });
 
 test("reprendre coche le prochain épisode non vu", async () => {

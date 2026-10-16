@@ -1,6 +1,8 @@
 // Tout ce qui sort vers l'API TVMaze passe par ici.
 // Un seul point de sortie, donc un seul endroit a remplacer dans les tests.
 const BASE = "https://api.tvmaze.com";
+const DUREE_CACHE = 10 * 60 * 1000; // 10 minutes
+const cache = new Map();
 
 // Le synopsis de TVMaze arrive en HTML : on le reduit a du texte avant de le
 // transmettre. On ne renvoie jamais tel quel ce qu'une API tierce nous donne.
@@ -51,6 +53,23 @@ const tvmaze = {
       number: e.number,
       name: e.name,
     }));
+  },
+
+  // Les episodes d'une serie ne changent pas d'une minute a l'autre :
+  // on garde la reponse en memoire pour ne pas rappeler TVMaze a chaque
+  // affichage de la liste. Passe par tvmaze.episodes, donc testable.
+  async episodesEnCache(id) {
+    const entree = cache.get(id);
+    if (entree && Date.now() - entree.date < DUREE_CACHE) {
+      return entree.episodes;
+    }
+    const episodes = await tvmaze.episodes(id);
+    cache.set(id, { episodes, date: Date.now() });
+    return episodes;
+  },
+
+  viderCache() {
+    cache.clear();
   },
 
   resumerSerie(show) {
