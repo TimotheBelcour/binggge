@@ -78,8 +78,11 @@ cd api && npm install && npm test
 ```
 
 Les tests s'exécutent sur la machine et joignent la base du conteneur via `DATABASE_URL`
-(défini dans `.env`, port `5433`). L'un d'eux interroge TVMaze pour récupérer une vraie liste
-d'épisodes : il échoue si l'API tierce est injoignable.
+(défini dans `.env`, port `5433`).
+
+**Aucun test n'appelle TVMaze.** Tous les échanges avec l'API tierce passent par
+`api/src/tvmaze.js`, un module unique que les tests remplacent par des données fixes. Un test
+rouge signale donc un problème dans le code, jamais une panne de réseau ou de service tiers.
 
 ## Pipeline
 

@@ -3,6 +3,33 @@ const assert = require("node:assert");
 const request = require("supertest");
 const app = require("../src/server");
 const db = require("../src/db");
+const tvmaze = require("../src/tvmaze");
+
+// Aucun test ne doit sortir sur le reseau : on remplace le seul point de
+// sortie vers TVMaze par des donnees fixes. Les tests mesurent alors notre
+// code, pas la disponibilite d'un service tiers.
+const EPISODES = [
+  { id: 901, season: 1, number: 1, name: "Le début" },
+  { id: 902, season: 1, number: 2, name: "La suite" },
+  { id: 903, season: 2, number: 1, name: "La reprise" },
+];
+
+tvmaze.episodes = async () => EPISODES;
+tvmaze.fiche = async (id) => {
+  if (String(id) === "999999999") {
+    throw Object.assign(new Error("inconnue"), { statut: 404 });
+  }
+  return {
+    id: Number(id),
+    title: "Série d'essai",
+    year: "2022",
+    image: null,
+    summary: tvmaze.texteBrut("<p>Un <b>synopsis</b> avec des balises.</p>"),
+    genres: ["Drama"],
+    status: "Running",
+    rating: 7.7,
+  };
+};
 
 // Un login unique par execution pour ne pas dependre de l'etat de la base
 const login = `test_${Date.now()}`;
@@ -58,11 +85,16 @@ test("ajouter une série la fait apparaître dans /watchlist", async () => {
   assert.equal(liste.body[0].seen, false);
 });
 
-test("la fiche d'une série est nettoyée du HTML de TVMaze", async () => {
+test("le synopsis est débarrassé de son HTML", () => {
+  const propre = tvmaze.texteBrut("<p>Un <b>synopsis</b> &amp; ses balises.</p>");
+  assert.equal(propre, "Un synopsis & ses balises.");
+  assert.equal(tvmaze.texteBrut(null), null);
+});
+
+test("la fiche d'une série est servie sans balises", async () => {
   const r = await request(app).get("/shows/44778");
   assert.equal(r.status, 200);
   assert.equal(r.body.id, 44778);
-  assert.ok(r.body.summary.length > 0);
   assert.ok(!/<[a-z]/i.test(r.body.summary), "le synopsis ne doit plus contenir de balises");
   assert.ok(Array.isArray(r.body.genres));
 });
@@ -109,7 +141,6 @@ test("cocher un épisode fait avancer la progression", async () => {
 });
 
 test("une série dont tous les épisodes sont vus est marquée vue", async () => {
-  // Ce test interroge TVMaze : c'est lui qui fournit la liste des episodes
   const ajout = await request(app)
     .post("/watchlist")
     .set("X-User", login)
@@ -122,15 +153,16 @@ test("une série dont tous les épisodes sont vus est marquée vue", async () =>
   assert.equal(tout.status, 200);
   assert.equal(tout.body.seen, true);
   assert.equal(tout.body.vus, tout.body.total);
-  assert.ok(tout.body.total > 0);
+  assert.equal(tout.body.total, EPISODES.length);
 
   // Decocher un seul episode suffit a ce que la serie ne soit plus vue
   const episodes = await request(app)
     .get(`/watchlist/${ajout.body.id}/episodes`)
     .set("X-User", login);
   assert.equal(episodes.status, 200);
+  assert.equal(episodes.body.length, EPISODES.length);
   assert.equal(episodes.body[0].seen, true);
-  assert.ok(episodes.body[0].season >= 1);
+  assert.equal(episodes.body[0].name, "Le début");
 
   await request(app)
     .put(`/watchlist/${ajout.body.id}/episodes/${episodes.body[0].id}`)
@@ -142,7 +174,6 @@ test("une série dont tous les épisodes sont vus est marquée vue", async () =>
 });
 
 test("reprendre coche le prochain épisode non vu", async () => {
-  // Ce test interroge TVMaze : c'est lui qui donne l'ordre des episodes
   const ajout = await request(app)
     .post("/watchlist")
     .set("X-User", login)
@@ -152,15 +183,14 @@ test("reprendre coche le prochain épisode non vu", async () => {
     .post(`/watchlist/${ajout.body.id}/episodes/next`)
     .set("X-User", login);
   assert.equal(premier.status, 201);
-  assert.equal(premier.body.season, 1);
-  assert.equal(premier.body.number, 1);
+  assert.deepStrictEqual(premier.body, EPISODES[0]);
 
   // Le suivant est bien le deuxieme, pas a nouveau le premier
   const second = await request(app)
     .post(`/watchlist/${ajout.body.id}/episodes/next`)
     .set("X-User", login);
   assert.equal(second.status, 201);
-  assert.equal(second.body.number, 2);
+  assert.deepStrictEqual(second.body, EPISODES[1]);
 
   const liste = await request(app).get("/watchlist").set("X-User", login);
   assert.equal(liste.body.find((s) => s.id === ajout.body.id).vus, 2);
