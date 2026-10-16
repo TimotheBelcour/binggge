@@ -34,6 +34,40 @@ app.get("/shows", async (req, res) => {
   res.json(series);
 });
 
+// Le synopsis de TVMaze arrive en HTML : on le reduit a du texte avant de le
+// transmettre. On ne renvoie jamais tel quel ce qu'une API tierce nous donne.
+function texteBrut(html) {
+  if (!html) return null;
+  return html
+    .replace(/<[^>]*>/g, "")
+    .replace(/&nbsp;/g, " ")
+    .replace(/&amp;/g, "&")
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .trim();
+}
+
+// Fiche d'une serie : affiche, synopsis, genres
+app.get("/shows/:id", async (req, res) => {
+  const reponse = await fetch(`https://api.tvmaze.com/shows/${encodeURIComponent(req.params.id)}`);
+  if (!reponse.ok) {
+    return res.status(404).json({ error: "série introuvable" });
+  }
+  const show = await reponse.json();
+  res.json({
+    id: show.id,
+    title: show.name,
+    year: show.premiered ? show.premiered.slice(0, 4) : null,
+    image: show.image ? show.image.medium : null,
+    summary: texteBrut(show.summary),
+    genres: show.genres || [],
+    status: show.status || null,
+    rating: show.rating ? show.rating.average : null,
+  });
+});
+
 // Episodes d'une serie chez TVMaze, reduits aux champs utiles
 async function episodesDeLaSerie(showId) {
   const reponse = await fetch(`https://api.tvmaze.com/shows/${showId}/episodes`);

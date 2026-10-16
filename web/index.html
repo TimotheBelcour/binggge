@@ -3,94 +3,172 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>binggge</title>
+<title>binggge — suivi de séries</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📺</text></svg>">
 <style>
   :root {
-    --fond: #14151a;
-    --carte: #1d1f27;
-    --bord: #2c2f3a;
-    --texte: #e8e9ed;
-    --doux: #9aa0b0;
-    --accent: #e0b341;
+    --fond: #101117;
+    --carte: #1a1c24;
+    --carte-survol: #20232d;
+    --bord: #2b2e3a;
+    --texte: #eceef3;
+    --doux: #969db0;
+    --accent: #e8bc4e;
+    --accent-sombre: #c79c33;
+    --danger: #f0a0a0;
+    --rayon: .7rem;
+  }
+  @media (prefers-color-scheme: light) {
+    :root:not([data-theme="dark"]) {
+      --fond: #f7f7f9;
+      --carte: #ffffff;
+      --carte-survol: #f0f1f4;
+      --bord: #e0e2e8;
+      --texte: #1b1d23;
+      --doux: #656c7d;
+      --accent: #c79c33;
+      --accent-sombre: #a5801f;
+      --danger: #b02a2a;
+    }
   }
   * { box-sizing: border-box; }
   body {
     margin: 0;
-    padding: 2rem 1rem 4rem;
+    padding: 2.5rem 1rem 5rem;
     background: var(--fond);
     color: var(--texte);
-    font: 16px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif;
+    font: 16px/1.55 system-ui, -apple-system, "Segoe UI", sans-serif;
+    -webkit-font-smoothing: antialiased;
   }
-  main { max-width: 52rem; margin: 0 auto; }
-  h1 { font-size: 2rem; margin: 0 0 .25rem; letter-spacing: -.02em; }
-  h2 { font-size: 1.1rem; margin: 2.5rem 0 .75rem; }
-  .sous-titre { color: var(--doux); margin: 0 0 2rem; }
+  main { max-width: 48rem; margin: 0 auto; }
+
+  h1 { font-size: 2.1rem; margin: 0; letter-spacing: -.03em; }
+  h1 span { color: var(--accent); }
+  .sous-titre { color: var(--doux); margin: .2rem 0 2.2rem; }
+  h2 {
+    font-size: .8rem; text-transform: uppercase; letter-spacing: .08em;
+    color: var(--doux); margin: 2.4rem 0 .8rem; font-weight: 600;
+  }
+
   input, button { font: inherit; }
-  input {
-    padding: .6rem .8rem;
+  input[type="text"], input:not([type]) {
+    padding: .65rem .85rem;
     background: var(--carte);
     border: 1px solid var(--bord);
-    border-radius: .5rem;
+    border-radius: var(--rayon);
     color: var(--texte);
+    transition: border-color .15s;
   }
-  input:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+  input:focus-visible, button:focus-visible {
+    outline: 2px solid var(--accent); outline-offset: 2px;
+  }
+  input[type="checkbox"] { accent-color: var(--accent); width: 1rem; height: 1rem; cursor: pointer; }
+
   button {
-    padding: .6rem .9rem;
+    padding: .65rem .95rem;
     background: var(--accent);
-    border: 0;
-    border-radius: .5rem;
-    color: #1a1a1a;
+    border: 1px solid transparent;
+    border-radius: var(--rayon);
+    color: #17181d;
     font-weight: 600;
     cursor: pointer;
+    transition: background .15s, border-color .15s, color .15s;
   }
+  button:hover:not(:disabled) { background: var(--accent-sombre); }
   button.discret {
-    background: transparent;
-    border: 1px solid var(--bord);
-    color: var(--doux);
-    font-weight: 400;
+    background: transparent; border-color: var(--bord);
+    color: var(--doux); font-weight: 500;
   }
-  button:disabled { opacity: .5; cursor: default; }
+  button.discret:hover:not(:disabled) { background: var(--carte-survol); color: var(--texte); }
+  button:disabled { opacity: .45; cursor: default; }
+
   form { display: flex; gap: .5rem; flex-wrap: wrap; }
-  form input { flex: 1; min-width: 12rem; }
+  form input { flex: 1; min-width: 11rem; }
+
   ul { list-style: none; margin: 0; padding: 0; display: grid; gap: .5rem; }
   li {
-    display: flex;
-    align-items: center;
-    gap: .75rem;
-    padding: .6rem;
+    display: flex; align-items: center; gap: .85rem;
+    padding: .7rem;
     background: var(--carte);
     border: 1px solid var(--bord);
-    border-radius: .6rem;
+    border-radius: var(--rayon);
+    transition: background .15s;
   }
-  li img { width: 40px; height: 56px; object-fit: cover; border-radius: .3rem; background: var(--bord); }
-  li .titre { flex: 1; min-width: 0; }
-  li .titre b { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  li .titre span { color: var(--doux); font-size: .875rem; }
+  li:hover { background: var(--carte-survol); }
+  .affiche {
+    width: 44px; height: 62px; flex: none;
+    object-fit: cover; border-radius: .35rem;
+    background: var(--bord);
+  }
+  .affiche.vide { background: var(--bord); }
+  .titre { flex: 1; min-width: 0; }
+  .titre b { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .titre span { color: var(--doux); font-size: .85rem; }
   li.vue .titre b { color: var(--doux); text-decoration: line-through; }
-  li.serie { flex-wrap: wrap; }
+
+  li.serie { flex-wrap: wrap; align-items: flex-start; }
+  li.serie .haut {
+    display: flex; align-items: center; gap: .85rem;
+    width: 100%; min-width: 0; flex-wrap: wrap;
+  }
   .chevron {
     background: transparent; border: 0; color: var(--doux);
-    padding: .2rem .4rem; font-size: .9rem; cursor: pointer;
+    padding: .3rem .35rem; line-height: 1; cursor: pointer; flex: none;
   }
-  .progression { color: var(--doux); font-size: .875rem; white-space: nowrap; }
-  .barre { width: 100%; height: 3px; background: var(--bord); border-radius: 2px; overflow: hidden; }
-  .barre i { display: block; height: 100%; background: var(--accent); }
-  .episodes { width: 100%; margin: .4rem 0 0; padding: .6rem 0 0; border-top: 1px solid var(--bord); }
+  .chevron:hover { color: var(--texte); background: transparent; }
+  .progression { color: var(--doux); font-size: .85rem; white-space: nowrap; }
+  .barre {
+    width: 100%; height: 3px; margin-top: .55rem;
+    background: var(--bord); border-radius: 2px; overflow: hidden;
+  }
+  .barre i { display: block; height: 100%; background: var(--accent); transition: width .25s; }
+
+  .episodes { width: 100%; margin-top: .7rem; padding-top: .7rem; border-top: 1px solid var(--bord); }
   .episodes h3 {
-    margin: .7rem 0 .3rem; font-size: .8rem; text-transform: uppercase;
-    letter-spacing: .06em; color: var(--doux);
+    margin: .9rem 0 .35rem; font-size: .72rem; text-transform: uppercase;
+    letter-spacing: .07em; color: var(--doux); font-weight: 600;
   }
   .episodes h3:first-child { margin-top: 0; }
   .episodes label {
-    display: flex; align-items: center; gap: .5rem;
-    padding: .2rem 0; font-size: .9rem; cursor: pointer;
+    display: flex; align-items: center; gap: .6rem;
+    padding: .25rem .3rem; border-radius: .35rem;
+    font-size: .92rem; cursor: pointer; min-width: 0;
   }
+  .episodes label span {
+    min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .episodes label input { flex: none; }
+  .episodes label:hover { background: var(--fond); }
   .episodes label.vu span { color: var(--doux); text-decoration: line-through; }
-  .episodes code { color: var(--doux); font-size: .8rem; }
-  .vide { color: var(--doux); font-style: italic; }
-  .erreur { color: #f0a0a0; }
-  header.moi { display: flex; align-items: baseline; gap: .75rem; margin-bottom: 2rem; }
-  header.moi span { color: var(--doux); }
+  .episodes code { color: var(--doux); font-size: .78rem; flex: none; }
+
+  .vide { color: var(--doux); font-style: italic; margin: .4rem 0; }
+  .erreur { color: var(--danger); margin: .4rem 0; }
+
+  header.moi { display: flex; align-items: center; gap: .75rem; margin-bottom: 1.8rem; }
+  header.moi span { color: var(--doux); font-size: .92rem; }
+
+  /* Squelettes affiches pendant le chargement */
+  .squelette {
+    background: linear-gradient(90deg, var(--bord) 25%, var(--carte-survol) 50%, var(--bord) 75%);
+    background-size: 200% 100%;
+    animation: glisse 1.2s infinite;
+  }
+  @keyframes glisse { to { background-position: -200% 0; } }
+  /* Sur petit ecran, les actions passent sous le titre plutot que de
+     pousser la ligne hors de l'ecran */
+  @media (max-width: 34rem) {
+    body { padding: 1.5rem .75rem 4rem; }
+    li.serie .haut > button.discret { flex: 1; }
+    li.serie .titre { flex-basis: 100%; order: -1; }
+    li.serie .chevron { order: -2; }
+    .affiche { order: -2; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .squelette { animation: none; }
+    * { transition: none !important; }
+  }
 </style>
 </head>
 <body>
@@ -127,20 +205,52 @@ async function api(chemin, options = {}) {
   return reponse.status === 204 ? null : reponse.json();
 }
 
+// Les fiches TVMaze ne changent pas d'une seconde a l'autre : on les garde
+// en memoire pour ne pas les redemander a chaque rendu
+const fiches = new Map();
+
+function useFiche(showId) {
+  const [fiche, setFiche] = useState(() => fiches.get(showId) || null);
+
+  useEffect(() => {
+    if (fiches.has(showId)) {
+      setFiche(fiches.get(showId));
+      return;
+    }
+    let vivant = true;
+    api(`/shows/${showId}`)
+      .then((f) => {
+        fiches.set(showId, f);
+        // Le composant peut avoir disparu entre-temps (serie retiree)
+        if (vivant) setFiche(f);
+      })
+      .catch(() => {});
+    return () => {
+      vivant = false;
+    };
+  }, [showId]);
+
+  return fiche;
+}
+
 function Connexion({ onConnecte }) {
   const [login, setLogin] = useState("");
   const [erreur, setErreur] = useState(null);
+  const [envoi, setEnvoi] = useState(false);
 
   async function entrer(e) {
     e.preventDefault();
     const nom = login.trim();
     if (!nom) return;
+    setEnvoi(true);
+    setErreur(null);
     try {
       await api("/register", { method: "POST", body: JSON.stringify({ login: nom }) });
     } catch (err) {
       // 409 : le login existe deja, on se reconnecte simplement dessus
       if (err.status !== 409) {
         setErreur(err.message);
+        setEnvoi(false);
         return;
       }
     }
@@ -152,25 +262,42 @@ function Connexion({ onConnecte }) {
     <form onSubmit=${entrer}>
       <input value=${login} onInput=${(e) => setLogin(e.target.value)}
              placeholder="Votre login" aria-label="Votre login" />
-      <button type="submit">Entrer</button>
+      <button type="submit" disabled=${envoi || !login.trim()}>
+        ${envoi ? "…" : "Entrer"}
+      </button>
       ${erreur && html`<p class="erreur">${erreur}</p>`}
     </form>
   `;
 }
 
-function Recherche({ onAjout }) {
+function Recherche({ onAjout, dejaDansLaListe }) {
   const [q, setQ] = useState("");
-  const [resultats, setResultats] = useState([]);
+  const [resultats, setResultats] = useState(null);
   const [cherche, setCherche] = useState(false);
+  const [erreur, setErreur] = useState(null);
+  const [enCours, setEnCours] = useState(null);
 
   async function chercher(e) {
     e.preventDefault();
     if (!q.trim()) return;
     setCherche(true);
+    setErreur(null);
     try {
       setResultats(await api(`/shows?q=${encodeURIComponent(q)}`));
+    } catch (err) {
+      setErreur(err.message);
+      setResultats(null);
     } finally {
       setCherche(false);
+    }
+  }
+
+  async function ajouter(serie) {
+    setEnCours(serie.id);
+    try {
+      await onAjout(serie);
+    } finally {
+      setEnCours(null);
     }
   }
 
@@ -178,17 +305,41 @@ function Recherche({ onAjout }) {
     <form onSubmit=${chercher}>
       <input value=${q} onInput=${(e) => setQ(e.target.value)}
              placeholder="Chercher une série…" aria-label="Chercher une série" />
-      <button type="submit" disabled=${cherche}>${cherche ? "…" : "Chercher"}</button>
+      <button type="submit" disabled=${cherche || !q.trim()}>
+        ${cherche ? "…" : "Chercher"}
+      </button>
     </form>
-    ${resultats.length > 0 && html`
-      <ul>
-        ${resultats.slice(0, 8).map((s) => html`
-          <li key=${s.id}>
-            <img src=${s.image || ""} alt="" />
-            <div class="titre"><b>${s.title}</b><span>${s.year || "année inconnue"}</span></div>
-            <button onClick=${() => onAjout(s)}>Ajouter</button>
+    ${erreur && html`<p class="erreur">${erreur}</p>`}
+    ${cherche && html`
+      <ul aria-busy="true">
+        ${[0, 1, 2].map((i) => html`
+          <li key=${i}>
+            <div class="affiche squelette"></div>
+            <div class="titre"><b>&nbsp;</b><span>Recherche en cours…</span></div>
           </li>
         `)}
+      </ul>
+    `}
+    ${!cherche && resultats && resultats.length === 0 && html`
+      <p class="vide">Aucune série ne correspond à « ${q} ».</p>
+    `}
+    ${!cherche && resultats && resultats.length > 0 && html`
+      <ul>
+        ${resultats.slice(0, 8).map((s) => {
+          const deja = dejaDansLaListe(s.id);
+          return html`
+            <li key=${s.id}>
+              ${s.image
+                ? html`<img class="affiche" src=${s.image} alt="" loading="lazy" />`
+                : html`<div class="affiche vide"></div>`}
+              <div class="titre"><b>${s.title}</b><span>${s.year || "année inconnue"}</span></div>
+              <button disabled=${deja || enCours === s.id}
+                      onClick=${() => ajouter(s)}>
+                ${deja ? "Déjà ajoutée" : enCours === s.id ? "…" : "Ajouter"}
+              </button>
+            </li>
+          `;
+        })}
       </ul>
     `}
   `;
@@ -243,23 +394,50 @@ function Episodes({ serie, version, onChangement }) {
 
 function Serie({ serie, version, onBascule, onRetrait, onChangement }) {
   const [ouverte, setOuverte] = useState(false);
+  const [occupee, setOccupee] = useState(false);
+  const fiche = useFiche(serie.show_id);
   const total = serie.total;
   const pourcent = total > 0 ? (serie.vus / total) * 100 : 0;
 
+  async function action(faire) {
+    setOccupee(true);
+    try {
+      await faire();
+    } finally {
+      setOccupee(false);
+    }
+  }
+
+  const sousTitre = total
+    ? `${serie.vus}/${total} épisodes`
+    : serie.vus > 0
+      ? `${serie.vus} épisode${serie.vus > 1 ? "s" : ""} vu${serie.vus > 1 ? "s" : ""}`
+      : fiche && fiche.genres.length > 0
+        ? fiche.genres.slice(0, 2).join(" · ")
+        : "Déplier pour voir les épisodes";
+
   return html`
     <li class=${`serie ${serie.seen ? "vue" : ""}`}>
-      <button class="chevron" onClick=${() => setOuverte(!ouverte)}
-              aria-label=${ouverte ? "Replier les épisodes" : "Déplier les épisodes"}>
-        ${ouverte ? "▾" : "▸"}
-      </button>
-      <div class="titre"><b>${serie.title}</b></div>
-      <span class="progression">
-        ${total ? `${serie.vus}/${total} épisodes` : `${serie.vus} épisode${serie.vus > 1 ? "s" : ""} vu${serie.vus > 1 ? "s" : ""}`}
-      </span>
-      <button class="discret" onClick=${() => onBascule(serie)}>
-        ${serie.seen ? "Tout décocher" : "Tout cocher"}
-      </button>
-      <button class="discret" onClick=${() => onRetrait(serie)}>Retirer</button>
+      <div class="haut">
+        <button class="chevron" onClick=${() => setOuverte(!ouverte)}
+                aria-expanded=${ouverte}
+                aria-label=${ouverte ? "Replier les épisodes" : "Déplier les épisodes"}>
+          ${ouverte ? "▾" : "▸"}
+        </button>
+        ${fiche && fiche.image
+          ? html`<img class="affiche" src=${fiche.image} alt="" loading="lazy" />`
+          : html`<div class=${`affiche ${fiche ? "vide" : "squelette"}`}></div>`}
+        <div class="titre">
+          <b>${serie.title}</b>
+          <span class="progression">${sousTitre}</span>
+        </div>
+        <button class="discret" disabled=${occupee}
+                onClick=${() => action(() => onBascule(serie))}>
+          ${serie.seen ? "Tout décocher" : "Tout cocher"}
+        </button>
+        <button class="discret" disabled=${occupee}
+                onClick=${() => action(() => onRetrait(serie))}>Retirer</button>
+      </div>
       ${total > 0 && html`<div class="barre"><i style=${{ width: `${pourcent}%` }}></i></div>`}
       ${ouverte && html`<${Episodes} serie=${serie} version=${version} onChangement=${onChangement} />`}
     </li>
@@ -268,7 +446,7 @@ function Serie({ serie, version, onBascule, onRetrait, onChangement }) {
 
 function Liste({ series, version, onBascule, onRetrait, onChangement }) {
   if (series.length === 0) {
-    return html`<p class="vide">Votre liste est vide. Cherchez une série pour commencer.</p>`;
+    return html`<p class="vide">Rien pour l'instant. Cherchez une série ci-dessus pour la suivre.</p>`;
   }
   return html`
     <ul>
@@ -303,7 +481,7 @@ function App() {
       method: "POST",
       body: JSON.stringify({ show_id: serie.id, title: serie.title }),
     });
-    recharger();
+    await recharger();
   }
 
   async function basculer(serie) {
@@ -328,8 +506,8 @@ function App() {
 
   return html`
     <main>
-      <h1>binggge</h1>
-      <p class="sous-titre">Un suivi de séries.</p>
+      <h1>bin<span>ggg</span>e</h1>
+      <p class="sous-titre">Suivez vos séries, épisode par épisode.</p>
       ${!login
         ? html`<${Connexion} onConnecte=${setLogin} />`
         : html`
@@ -337,7 +515,9 @@ function App() {
               <span>Connecté comme <b>${login}</b></span>
               <button class="discret" onClick=${sortir}>Changer</button>
             </header>
-            <${Recherche} onAjout=${ajouter} />
+            <h2>Chercher</h2>
+            <${Recherche} onAjout=${ajouter}
+                          dejaDansLaListe=${(showId) => series.some((s) => s.show_id === showId)} />
             <h2>Ma liste</h2>
             ${erreur && html`<p class="erreur">${erreur}</p>`}
             <${Liste} series=${series} version=${version} onBascule=${basculer}
