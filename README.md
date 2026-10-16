@@ -27,7 +27,11 @@ le conteneur directement sur le réseau Docker.
 
 La page `web/index.html` est servie par l'API elle-même, à la racine (`/`) : on entre un login,
 on cherche une série, on l'ajoute à sa liste, on déplie ses épisodes pour cocher ceux qu'on a vus,
-on suit sa progression (« 7/26 épisodes »), et on la retire.
+on suit sa progression (« 7/26 épisodes »), et on la retire. Chaque série de la liste affiche son
+affiche et ses genres, chargés à la demande depuis `GET /shows/:id` et gardés en mémoire.
+
+L'interface suit le thème clair ou sombre du système, s'adapte au mobile, désactive les boutons
+pendant les envois et respecte `prefers-reduced-motion`.
 Elle est écrite en React chargé depuis un CDN, sans étape de build — le fichier HTML est le
 livrable, l'image Docker l'embarque.
 
@@ -38,6 +42,7 @@ l'en-tête `X-User` (voir la section Authentification).
 
 - `GET /health` — renvoie `{ "status": "ok" }`
 - `GET /shows?q=<recherche>` — cherche des séries via l'API TVMaze et renvoie une liste allégée (`id`, `title`, `year`, `image`)
+- `GET /shows/:id` — fiche d'une série : affiche, genres, note et synopsis **débarrassé de son HTML**
 - `POST /register` — crée un utilisateur à partir d'un `login` (`409` s'il existe déjà)
 - `GET /watchlist` — renvoie la liste de suivi de l'utilisateur (`401` sans en-tête `X-User`)
 - `POST /watchlist` — ajoute une série (`show_id`, `title`) à la liste de l'utilisateur

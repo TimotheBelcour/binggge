@@ -58,6 +58,20 @@ test("ajouter une série la fait apparaître dans /watchlist", async () => {
   assert.equal(liste.body[0].seen, false);
 });
 
+test("la fiche d'une série est nettoyée du HTML de TVMaze", async () => {
+  const r = await request(app).get("/shows/44778");
+  assert.equal(r.status, 200);
+  assert.equal(r.body.id, 44778);
+  assert.ok(r.body.summary.length > 0);
+  assert.ok(!/<[a-z]/i.test(r.body.summary), "le synopsis ne doit plus contenir de balises");
+  assert.ok(Array.isArray(r.body.genres));
+});
+
+test("une série inconnue renvoie 404", async () => {
+  const r = await request(app).get("/shows/999999999");
+  assert.equal(r.status, 404);
+});
+
 test("watchlist sans en-tête : 401", async () => {
   const r = await request(app).get("/watchlist");
   assert.equal(r.status, 401);
