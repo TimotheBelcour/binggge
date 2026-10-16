@@ -29,7 +29,8 @@ La page `web/index.html` est servie par l'API elle-même, à la racine (`/`) : o
 la liste occupe le haut de la page et la recherche s'ouvre dans un panneau, qui se referme dès
 qu'une série est ajoutée. On déplie une série pour lire sa fiche (année, genres, statut, note,
 synopsis) et cocher les épisodes vus, on suit sa progression (« 7/26 épisodes »), on la retire.
-Le bouton « Reprendre » coche le prochain épisode non vu sans avoir à déplier la série.
+Chaque série annonce son prochain épisode (« 0/12 épisodes · S01E01 · Glorious Purpose ») et le
+bouton « Reprendre » le coche sans avoir à déplier la série.
 Les fiches viennent de `GET /shows/:id`, chargées à la demande et gardées en mémoire.
 
 L'interface suit le thème clair ou sombre du système, s'adapte au mobile, désactive les boutons
@@ -46,7 +47,7 @@ l'en-tête `X-User` (voir la section Authentification).
 - `GET /shows?q=<recherche>` — cherche des séries via l'API TVMaze et renvoie une liste allégée (`id`, `title`, `year`, `image`)
 - `GET /shows/:id` — fiche d'une série : affiche, genres, note et synopsis **débarrassé de son HTML**
 - `POST /register` — crée un utilisateur à partir d'un `login` (`409` s'il existe déjà)
-- `GET /watchlist` — renvoie la liste de suivi de l'utilisateur (`401` sans en-tête `X-User`)
+- `GET /watchlist` — renvoie la liste de suivi de l'utilisateur, chaque série portant sa progression et son prochain épisode non vu (`401` sans en-tête `X-User`)
 - `POST /watchlist` — ajoute une série (`show_id`, `title`) à la liste de l'utilisateur
 - `PATCH /watchlist/:id` — coche ou décoche **tous** les épisodes d'un coup (`seen`, booléen)
 - `GET /watchlist/:id/episodes` — les épisodes de la série (via TVMaze), chacun marqué vu ou non
@@ -83,6 +84,10 @@ Les tests s'exécutent sur la machine et joignent la base du conteneur via `DATA
 **Aucun test n'appelle TVMaze.** Tous les échanges avec l'API tierce passent par
 `api/src/tvmaze.js`, un module unique que les tests remplacent par des données fixes. Un test
 rouge signale donc un problème dans le code, jamais une panne de réseau ou de service tiers.
+
+Ce module garde aussi les listes d'épisodes **en cache dix minutes** : afficher sa watchlist
+ne déclenche pas un appel à TVMaze par série à chaque chargement. Si TVMaze est injoignable,
+la liste s'affiche quand même, simplement sans le prochain épisode.
 
 ## Pipeline
 
