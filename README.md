@@ -48,7 +48,7 @@ l'en-tête `X-User` (voir la section Authentification).
 
 - `GET /health` — renvoie `{ "status": "ok" }`
 - `GET /shows?q=<recherche>` — cherche des séries via l'API TVMaze et renvoie une liste allégée (`id`, `title`, `year`, `image`)
-- `GET /shows/:id` — fiche d'une série : affiche, genres, note et synopsis **débarrassé de son HTML**
+- `GET /shows/:id` — fiche d'une série : affiche (vignette et grand format), genres, note et synopsis **débarrassé de son HTML**
 - `POST /register` — crée un utilisateur à partir d'un `login` (`409` s'il existe déjà)
 - `GET /watchlist` — renvoie la liste de suivi de l'utilisateur, chaque série portant sa progression et son prochain épisode non vu (`401` sans en-tête `X-User`)
 - `POST /watchlist` — ajoute une série (`show_id`, `title`) à la liste de l'utilisateur

@@ -38,6 +38,8 @@ const tvmaze = {
     const show = await recuperer(`/shows/${encodeURIComponent(id)}`);
     return {
       ...tvmaze.resumerSerie(show),
+      // L'original sert de banniere : la vignette serait floue en grand
+      imageLarge: show.image ? show.image.original : null,
       summary: texteBrut(show.summary),
       genres: show.genres || [],
       status: show.status || null,

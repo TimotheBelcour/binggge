@@ -7,224 +7,229 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📺</text></svg>">
 <style>
   :root {
-    --fond: #101117;
-    --carte: #1a1c24;
-    --carte-survol: #20232d;
-    --bord: #2b2e3a;
-    --texte: #eceef3;
-    --doux: #969db0;
+    --fond: #0b0b0f;
+    --fond-2: #15151c;
+    --carte: #1b1c25;
+    --bord: #2a2b36;
+    --texte: #f2f3f7;
+    --doux: #a0a6b8;
     --accent: #e8bc4e;
     --accent-sombre: #c79c33;
     --danger: #f0a0a0;
-    --rayon: .7rem;
-  }
-  @media (prefers-color-scheme: light) {
-    :root:not([data-theme="dark"]) {
-      --fond: #f7f7f9;
-      --carte: #ffffff;
-      --carte-survol: #f0f1f4;
-      --bord: #e0e2e8;
-      --texte: #1b1d23;
-      --doux: #656c7d;
-      --accent: #c79c33;
-      --accent-sombre: #a5801f;
-      --danger: #b02a2a;
-    }
+    --rayon: .6rem;
+    --affiche-l: 10.5rem;
+    --affiche-h: 15.5rem;
   }
   * { box-sizing: border-box; }
   body {
     margin: 0;
-    padding: 2.5rem 1rem 5rem;
     background: var(--fond);
     color: var(--texte);
-    font: 16px/1.55 system-ui, -apple-system, "Segoe UI", sans-serif;
+    font: 16px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif;
     -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
   }
-  main { max-width: 48rem; margin: 0 auto; }
-
-  h1 { font-size: 2.1rem; margin: 0; letter-spacing: -.03em; }
-  h1 span { color: var(--accent); }
-  .sous-titre { color: var(--doux); margin: .2rem 0 2.2rem; }
-  h2 {
-    font-size: .8rem; text-transform: uppercase; letter-spacing: .08em;
-    color: var(--doux); margin: 2.4rem 0 .8rem; font-weight: 600;
-  }
-
   input, button { font: inherit; }
-  input[type="text"], input:not([type]) {
-    padding: .65rem .85rem;
-    background: var(--carte);
-    border: 1px solid var(--bord);
-    border-radius: var(--rayon);
-    color: var(--texte);
-    transition: border-color .15s;
-  }
-  input:focus-visible, button:focus-visible {
-    outline: 2px solid var(--accent); outline-offset: 2px;
-  }
-  input[type="checkbox"] { accent-color: var(--accent); width: 1rem; height: 1rem; cursor: pointer; }
+  /* Un bouton n'herite pas de la couleur du texte : sans ca, son contenu
+     retombe sur le noir par defaut du navigateur */
+  button { cursor: pointer; border: 0; border-radius: var(--rayon); color: var(--texte); }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
 
-  button {
-    padding: .65rem .95rem;
-    background: var(--accent);
-    border: 1px solid transparent;
-    border-radius: var(--rayon);
-    color: #17181d;
-    font-weight: 600;
-    cursor: pointer;
-    transition: background .15s, border-color .15s, color .15s;
+  /* ---------- barre du haut ---------- */
+  .entete {
+    position: sticky; top: 0; z-index: 30;
+    display: flex; align-items: center; gap: 1rem;
+    padding: .9rem 2rem;
+    background: linear-gradient(180deg, rgba(11,11,15,.96), rgba(11,11,15,.55) 70%, transparent);
+    backdrop-filter: blur(6px);
   }
-  button:hover:not(:disabled) { background: var(--accent-sombre); }
-  button.discret {
-    background: transparent; border-color: var(--bord);
-    color: var(--doux); font-weight: 500;
+  .marque { font-size: 1.35rem; font-weight: 800; letter-spacing: -.03em; }
+  .marque span { color: var(--accent); }
+  .entete .pousse { margin-left: auto; }
+  .bouton-clair {
+    padding: .5rem .9rem; background: var(--accent); color: #17181d; font-weight: 600;
   }
-  button.discret:hover:not(:disabled) { background: var(--carte-survol); color: var(--texte); }
+  .bouton-clair:hover { background: var(--accent-sombre); }
+  .bouton-sombre {
+    padding: .5rem .9rem; background: rgba(255,255,255,.1); color: var(--texte);
+    border: 1px solid var(--bord);
+  }
+  .bouton-sombre:hover { background: rgba(255,255,255,.18); }
+  .qui { color: var(--doux); font-size: .9rem; white-space: nowrap; }
+  .qui b { color: var(--texte); }
+
+  /* ---------- banniere ---------- */
+  .banniere {
+    position: relative; min-height: 26rem;
+    display: flex; align-items: flex-end;
+    padding: 2rem 2rem 2.5rem;
+    margin-top: -4.2rem;
+    overflow: hidden;
+  }
+  .banniere .fond {
+    position: absolute; inset: 0;
+    background-size: cover; background-position: center 18%;
+    filter: saturate(1.05);
+  }
+  .banniere .voile {
+    position: absolute; inset: 0;
+    background:
+      linear-gradient(180deg, rgba(11,11,15,.75) 0%, rgba(11,11,15,.15) 35%, var(--fond) 97%),
+      linear-gradient(90deg, rgba(11,11,15,.92) 0%, rgba(11,11,15,.4) 55%, transparent 85%);
+  }
+  .banniere .dedans { position: relative; max-width: 34rem; }
+  .banniere h1 { font-size: clamp(1.9rem, 5vw, 3rem); margin: 0 0 .4rem; letter-spacing: -.03em; }
+  .meta { color: var(--doux); font-size: .92rem; margin: 0 0 .7rem; }
+  .meta .note { color: var(--accent); font-weight: 600; }
+  .resume {
+    margin: 0 0 1.2rem; color: #d6d9e2; font-size: .96rem;
+    display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
+  }
+  .actions { display: flex; gap: .6rem; flex-wrap: wrap; }
+  .actions button { padding: .7rem 1.3rem; font-weight: 600; }
+  .prochain-banniere { color: var(--doux); font-size: .9rem; margin: 0 0 1rem; }
+  .prochain-banniere b { color: var(--texte); font-weight: 600; }
+
+  /* ---------- rangees ---------- */
+  main { padding: 0 0 5rem; }
+  .rangee { margin: 2.2rem 0; }
+  .rangee h2 {
+    margin: 0 0 .8rem; padding: 0 2rem;
+    font-size: 1.05rem; letter-spacing: -.01em;
+  }
+  .piste {
+    display: flex; gap: .9rem; padding: .4rem 2rem 1.2rem;
+    overflow-x: auto; scroll-snap-type: x proximity;
+    scrollbar-width: thin;
+  }
+  .piste::-webkit-scrollbar { height: 8px; }
+  .piste::-webkit-scrollbar-thumb { background: var(--bord); border-radius: 4px; }
+
+  .vignette {
+    position: relative; flex: none; width: var(--affiche-l);
+    background: transparent; padding: 0; text-align: left;
+    scroll-snap-align: start;
+    transition: transform .18s;
+  }
+  .vignette:hover, .vignette:focus-visible { transform: scale(1.06); z-index: 2; }
+  .vignette .image {
+    width: 100%; height: var(--affiche-h);
+    border-radius: var(--rayon); overflow: hidden;
+    background: var(--carte); position: relative;
+  }
+  .vignette .image img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .vignette .image.squelette { background-size: 200% 100%; animation: glisse 1.2s infinite; }
+  .vignette .ombre {
+    position: absolute; inset: auto 0 0 0; padding: 2.2rem .6rem .6rem;
+    background: linear-gradient(transparent, rgba(0,0,0,.85));
+  }
+  .vignette .nom {
+    font-weight: 600; font-size: .92rem; line-height: 1.25;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+  }
+  .vignette .sous { color: #c6cad6; font-size: .78rem; margin-top: .15rem; }
+  .jauge { height: 3px; margin-top: .4rem; background: rgba(255,255,255,.25); border-radius: 2px; }
+  .jauge i { display: block; height: 100%; background: var(--accent); border-radius: 2px; }
+  .vignette.finie .image img { filter: grayscale(.45) brightness(.8); }
+
+  /* ---------- surcouches ---------- */
+  .surcouche {
+    position: fixed; inset: 0; z-index: 50;
+    background: rgba(5,5,8,.8); backdrop-filter: blur(4px);
+    display: flex; justify-content: center;
+    padding: 3rem 1rem; overflow-y: auto;
+  }
+  .boite {
+    position: relative; width: min(46rem, 100%); height: max-content;
+    background: var(--fond-2); border: 1px solid var(--bord);
+    border-radius: 1rem; overflow: hidden;
+  }
+  .fermer {
+    position: absolute; top: .8rem; right: .8rem; z-index: 3;
+    width: 2.2rem; height: 2.2rem; border-radius: 50%;
+    background: rgba(0,0,0,.6); color: var(--texte); font-size: 1.1rem; line-height: 1;
+  }
+  .fermer:hover { background: rgba(0,0,0,.85); }
+  .boite .haut-detail { position: relative; min-height: 15rem; display: flex; align-items: flex-end; padding: 1.6rem; }
+  .boite .haut-detail .fond { position: absolute; inset: 0; background-size: cover; background-position: center 20%; }
+  .boite .haut-detail .voile {
+    position: absolute; inset: 0;
+    background: linear-gradient(180deg, rgba(21,21,28,.3), var(--fond-2) 95%);
+  }
+  .boite .haut-detail .dedans { position: relative; }
+  .boite h2 { margin: 0 0 .35rem; font-size: 1.7rem; letter-spacing: -.02em; }
+  .corps { padding: 1.2rem 1.6rem 1.8rem; }
+
+  .saisons { display: flex; gap: .4rem; flex-wrap: wrap; margin: 1.2rem 0 .8rem; }
+  .saisons button {
+    padding: .35rem .8rem; font-size: .88rem;
+    background: rgba(255,255,255,.07); color: var(--doux); border: 1px solid var(--bord);
+  }
+  .saisons button[aria-pressed="true"] { background: var(--accent); color: #17181d; font-weight: 600; }
+
+  .episode {
+    display: flex; align-items: center; gap: .75rem;
+    padding: .55rem .5rem; border-radius: .45rem; cursor: pointer;
+  }
+  .episode:hover { background: rgba(255,255,255,.05); }
+  .episode input { accent-color: var(--accent); width: 1.05rem; height: 1.05rem; flex: none; }
+  .episode .num { color: var(--doux); font-size: .8rem; flex: none; min-width: 3.2rem; }
+  .episode .nom { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .episode.vu .nom { color: var(--doux); text-decoration: line-through; }
+
+  /* ---------- recherche ---------- */
+  .recherche-form { display: flex; gap: .6rem; margin-bottom: 1.2rem; }
+  .recherche-form input {
+    flex: 1; padding: .75rem .9rem; border-radius: var(--rayon);
+    background: var(--carte); border: 1px solid var(--bord); color: var(--texte);
+  }
+  .grille {
+    display: grid; gap: 1rem;
+    grid-template-columns: repeat(auto-fill, minmax(8.5rem, 1fr));
+  }
+  .grille .vignette { width: 100%; }
+  .grille .vignette .image { height: 12.5rem; }
+
+  /* ---------- divers ---------- */
+  .vide { color: var(--doux); font-style: italic; padding: 0 2rem; }
+  .erreur { color: var(--danger); padding: 0 2rem; }
+  .message {
+    position: fixed; left: 50%; bottom: 1.5rem; transform: translateX(-50%); z-index: 60;
+    padding: .7rem 1.1rem; background: var(--carte);
+    border: 1px solid var(--bord); border-left: 3px solid var(--accent);
+    border-radius: .5rem; font-size: .9rem; box-shadow: 0 8px 30px rgba(0,0,0,.5);
+  }
+  .accueil { padding: 6rem 2rem; max-width: 24rem; margin: 0 auto; text-align: center; }
+  .accueil h1 { font-size: 2.4rem; margin: 0 0 .3rem; letter-spacing: -.03em; }
+  .accueil h1 span { color: var(--accent); }
+  .accueil p { color: var(--doux); margin: 0 0 2rem; }
+  .accueil form { display: flex; gap: .5rem; }
+  .accueil input {
+    flex: 1; padding: .75rem .9rem; border-radius: var(--rayon);
+    background: var(--carte); border: 1px solid var(--bord); color: var(--texte);
+  }
   button:disabled { opacity: .45; cursor: default; }
 
-  form { display: flex; gap: .5rem; flex-wrap: wrap; }
-  form input { flex: 1; min-width: 11rem; }
-
-  ul { list-style: none; margin: 0; padding: 0; display: grid; gap: .5rem; }
-  li {
-    display: flex; align-items: center; gap: .85rem;
-    padding: .7rem;
-    background: var(--carte);
-    border: 1px solid var(--bord);
-    border-radius: var(--rayon);
-    transition: background .15s;
-  }
-  li:hover { background: var(--carte-survol); }
-  .affiche {
-    width: 44px; height: 62px; flex: none;
-    object-fit: cover; border-radius: .35rem;
-    background: var(--bord);
-  }
-  .affiche.vide { background: var(--bord); }
-  .titre { flex: 1; min-width: 0; }
-  .titre b { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .titre span { color: var(--doux); font-size: .85rem; }
-  li.vue .titre b { color: var(--doux); text-decoration: line-through; }
-
-  li.serie { flex-wrap: wrap; align-items: flex-start; }
-  li.serie .haut {
-    display: flex; align-items: center; gap: .85rem;
-    width: 100%; min-width: 0; flex-wrap: wrap;
-  }
-  .chevron {
-    background: transparent; border: 0; color: var(--doux);
-    /* 44px de cible : la taille d'un bout de doigt */
-    min-width: 2.75rem; min-height: 2.75rem;
-    display: flex; align-items: center; justify-content: center;
-    line-height: 1; cursor: pointer; flex: none;
-  }
-  button.chevron:hover { color: var(--texte); background: transparent; }
-  .chevron span { display: block; transition: transform .2s; }
-  li.ouverte .chevron span { transform: rotate(90deg); }
-
-  .depliable { cursor: pointer; }
-
-  .section-terminees { margin-top: 1.4rem; }
-  .replier {
-    display: flex; align-items: center; gap: .5rem;
-    width: 100%; padding: .55rem .2rem;
-    background: transparent; border: 0; border-top: 1px solid var(--bord);
-    border-radius: 0; color: var(--doux);
-    font-size: .8rem; text-transform: uppercase; letter-spacing: .07em;
-  }
-  /* button:hover:not(:disabled) est plus specifique que .replier:hover :
-     on nomme l'element pour reprendre la main */
-  button.replier:hover { background: transparent; color: var(--texte); }
-  .chevron-inline { display: inline-block; transition: transform .2s; }
-  .chevron-inline.ouvert { transform: rotate(90deg); }
-  .section-terminees ul { margin-top: .5rem; }
-  .progression { color: var(--doux); font-size: .85rem; }
-  .prochain { color: var(--texte); }
-  li.vue .prochain { color: var(--doux); }
-  .barre {
-    width: 100%; height: 3px; margin-top: .55rem;
-    background: var(--bord); border-radius: 2px; overflow: hidden;
-  }
-  .barre i { display: block; height: 100%; background: var(--accent); transition: width .25s; }
-
-  .episodes { width: 100%; margin-top: .7rem; padding-top: .7rem; border-top: 1px solid var(--bord); }
-  .episodes h3 {
-    margin: .9rem 0 .35rem; font-size: .72rem; text-transform: uppercase;
-    letter-spacing: .07em; color: var(--doux); font-weight: 600;
-  }
-  .episodes h3:first-child { margin-top: 0; }
-  .episodes label {
-    display: flex; align-items: center; gap: .6rem;
-    padding: .25rem .3rem; border-radius: .35rem;
-    font-size: .92rem; cursor: pointer; min-width: 0;
-  }
-  .episodes label span {
-    min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-  }
-  .episodes label input { flex: none; }
-  .episodes label:hover { background: var(--fond); }
-  .episodes label.vu span { color: var(--doux); text-decoration: line-through; }
-  .episodes code { color: var(--doux); font-size: .78rem; flex: none; }
-
-  .barre-titre {
-    display: flex; align-items: baseline; justify-content: space-between;
-    gap: 1rem; margin: 2.4rem 0 .8rem;
-  }
-  .barre-titre h2 { margin: 0; }
-  .panneau {
-    padding: .9rem;
-    background: var(--carte);
-    border: 1px solid var(--bord);
-    border-radius: var(--rayon);
-    margin-bottom: 1rem;
-  }
-  .panneau ul { margin-top: .7rem; }
-  .panneau li { background: var(--fond); }
-
-  .fiche { font-size: .9rem; color: var(--doux); margin: 0 0 .2rem; }
-  .fiche .note { color: var(--accent); font-weight: 600; }
-  .synopsis {
-    margin: .5rem 0 1.1rem; font-size: .92rem; color: var(--doux);
-    max-width: 44rem;
-  }
-  /* Sans synopsis, la fiche seule doit garder cet ecart avec les saisons */
-  .fiche:last-of-type { margin-bottom: 1.1rem; }
-
-  /* L'emplacement est toujours reserve : l'apparition du message ne doit pas
-     decaler la liste sous le curseur de l'utilisateur */
-  .zone-message { min-height: 2.6rem; }
-  .message {
-    margin: 0 0 .7rem; padding: .5rem .7rem;
-    background: var(--carte); border: 1px solid var(--bord);
-    border-left: 3px solid var(--accent); border-radius: .4rem;
-    font-size: .9rem; color: var(--doux);
-  }
-  .vide { color: var(--doux); font-style: italic; margin: .4rem 0; }
-  .erreur { color: var(--danger); margin: .4rem 0; }
-
-  header.moi { display: flex; align-items: center; gap: .75rem; margin-bottom: 1.8rem; }
-  header.moi span { color: var(--doux); font-size: .92rem; }
-
-  /* Squelettes affiches pendant le chargement */
-  .squelette {
-    background: linear-gradient(90deg, var(--bord) 25%, var(--carte-survol) 50%, var(--bord) 75%);
-    background-size: 200% 100%;
-    animation: glisse 1.2s infinite;
-  }
   @keyframes glisse { to { background-position: -200% 0; } }
-  /* Sur petit ecran, les actions passent sous le titre plutot que de
-     pousser la ligne hors de l'ecran */
-  @media (max-width: 34rem) {
-    body { padding: 1.5rem .75rem 4rem; }
-    li.serie .haut > button.discret { flex: 1; }
-    li.serie .titre { flex-basis: 100%; order: -1; }
-    li.serie .chevron { order: -2; }
-    .affiche { order: -2; }
+  .squelette {
+    background: linear-gradient(90deg, var(--carte) 25%, var(--bord) 50%, var(--carte) 75%);
+    background-size: 200% 100%; animation: glisse 1.2s infinite;
   }
 
+  @media (max-width: 40rem) {
+    :root { --affiche-l: 7.5rem; --affiche-h: 11rem; }
+    .entete, .rangee h2, .vide, .erreur { padding-left: 1rem; padding-right: 1rem; }
+    .piste { padding-left: 1rem; padding-right: 1rem; }
+    /* Sur petit ecran, « Connecté comme … » poussait le bouton hors de l'ecran */
+    .qui { display: none; }
+    .entete { gap: .6rem; padding: .8rem 1rem; }
+    /* Le titre doit passer sous la barre collante, pas derriere */
+    .banniere { padding: 5.5rem 1rem 2rem; min-height: 24rem; }
+    .surcouche { padding: 0; }
+    .boite { border-radius: 0; min-height: 100%; }
+  }
   @media (prefers-reduced-motion: reduce) {
-    .squelette { animation: none; }
-    * { transition: none !important; }
+    * { transition: none !important; animation: none !important; }
   }
 </style>
 </head>
@@ -235,7 +240,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.3.1/umd/react-dom.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/htm/3.1.1/htm.umd.js"></script>
 <script>
-const { useState, useEffect, useCallback } = React;
+const { useState, useEffect, useCallback, useRef } = React;
 const html = htm.bind(React.createElement);
 
 // L'API est servie par le meme serveur que cette page : on deduit la base de l'URL courante,
@@ -262,19 +267,20 @@ async function api(chemin, options = {}) {
   return reponse.status === 204 ? null : reponse.json();
 }
 
-// Les fiches TVMaze ne changent pas d'une seconde a l'autre : on les garde
-// en memoire pour ne pas les redemander a chaque rendu
-const fiches = new Map();
-
-// S01E02 : le meme format dans la liste et dans les episodes deplies
+// S01E02 : le meme format partout
 function code(episode) {
   return `S${String(episode.season).padStart(2, "0")}E${String(episode.number).padStart(2, "0")}`;
 }
+
+// Les fiches TVMaze ne changent pas d'une seconde a l'autre : on les garde
+// en memoire pour ne pas les redemander a chaque rendu
+const fiches = new Map();
 
 function useFiche(showId) {
   const [fiche, setFiche] = useState(() => fiches.get(showId) || null);
 
   useEffect(() => {
+    if (!showId) return;
     if (fiches.has(showId)) {
       setFiche(fiches.get(showId));
       return;
@@ -283,7 +289,6 @@ function useFiche(showId) {
     api(`/shows/${showId}`)
       .then((f) => {
         fiches.set(showId, f);
-        // Le composant peut avoir disparu entre-temps (serie retiree)
         if (vivant) setFiche(f);
       })
       .catch(() => {});
@@ -295,7 +300,8 @@ function useFiche(showId) {
   return fiche;
 }
 
-function Connexion({ onConnecte }) {
+// ---------------------------------------------------------------- connexion
+function Accueil({ onConnecte }) {
   const [login, setLogin] = useState("");
   const [erreur, setErreur] = useState(null);
   const [envoi, setEnvoi] = useState(false);
@@ -321,110 +327,149 @@ function Connexion({ onConnecte }) {
   }
 
   return html`
-    <form onSubmit=${entrer}>
-      <input value=${login} onInput=${(e) => setLogin(e.target.value)}
-             placeholder="Votre login" aria-label="Votre login" />
-      <button type="submit" disabled=${envoi || !login.trim()}>
-        ${envoi ? "…" : "Entrer"}
-      </button>
+    <div class="accueil">
+      <h1>bin<span>ggg</span>e</h1>
+      <p>Suivez vos séries, épisode par épisode.</p>
+      <form onSubmit=${entrer}>
+        <input value=${login} onInput=${(e) => setLogin(e.target.value)}
+               placeholder="Votre login" aria-label="Votre login" autofocus />
+        <button class="bouton-clair" type="submit" disabled=${envoi || !login.trim()}>
+          ${envoi ? "…" : "Entrer"}
+        </button>
+      </form>
       ${erreur && html`<p class="erreur">${erreur}</p>`}
-    </form>
+    </div>
   `;
 }
 
-function Recherche({ onAjout, onAjoutTermine, dejaDansLaListe }) {
-  const [q, setQ] = useState("");
-  const [resultats, setResultats] = useState(null);
-  const [cherche, setCherche] = useState(false);
-  const [erreur, setErreur] = useState(null);
-  const [enCours, setEnCours] = useState(null);
-
-  async function chercher(e) {
-    e.preventDefault();
-    if (!q.trim()) return;
-    setCherche(true);
-    setErreur(null);
-    try {
-      setResultats(await api(`/shows?q=${encodeURIComponent(q)}`));
-    } catch (err) {
-      setErreur(err.message);
-      setResultats(null);
-    } finally {
-      setCherche(false);
-    }
-  }
-
-  async function ajouter(serie) {
-    setEnCours(serie.id);
-    try {
-      await onAjout(serie);
-      // Le panneau se referme : la serie ajoutee est deja visible dans la liste
-      onAjoutTermine();
-    } finally {
-      setEnCours(null);
-    }
-  }
-
-  return html`
-    <form onSubmit=${chercher}>
-      <input value=${q} onInput=${(e) => setQ(e.target.value)}
-             placeholder="Chercher une série…" aria-label="Chercher une série"
-             ref=${(el) => el && el.focus()} />
-      <button type="submit" disabled=${cherche || !q.trim()}>
-        ${cherche ? "…" : "Chercher"}
-      </button>
-    </form>
-    ${erreur && html`<p class="erreur">${erreur}</p>`}
-    ${cherche && html`
-      <ul aria-busy="true">
-        ${[0, 1, 2].map((i) => html`
-          <li key=${i}>
-            <div class="affiche squelette"></div>
-            <div class="titre"><b>&nbsp;</b><span>Recherche en cours…</span></div>
-          </li>
-        `)}
-      </ul>
-    `}
-    ${!cherche && resultats && resultats.length === 0 && html`
-      <p class="vide">Aucune série ne correspond à « ${q} ».</p>
-    `}
-    ${!cherche && resultats && resultats.length > 0 && html`
-      <ul>
-        ${resultats.slice(0, 8).map((s) => {
-          const deja = dejaDansLaListe(s.id);
-          return html`
-            <li key=${s.id}>
-              ${s.image
-                ? html`<img class="affiche" src=${s.image} alt="" loading="lazy" />`
-                : html`<div class="affiche vide"></div>`}
-              <div class="titre"><b>${s.title}</b><span>${s.year || "année inconnue"}</span></div>
-              <button disabled=${deja || enCours === s.id}
-                      onClick=${() => ajouter(s)}>
-                ${deja ? "Déjà ajoutée" : enCours === s.id ? "…" : "Ajouter"}
-              </button>
-            </li>
-          `;
-        })}
-      </ul>
-    `}
-  `;
-}
-
-function Episodes({ serie, version, onChangement }) {
-  const [episodes, setEpisodes] = useState(null);
-  const [erreur, setErreur] = useState(null);
-  const fiche = useFiche(serie.show_id);
+// ------------------------------------------------------------- surcouche
+function Surcouche({ children, onFermer, etiquette }) {
+  const fond = useRef(null);
 
   useEffect(() => {
-    api(`/watchlist/${serie.id}/episodes`)
-      .then(setEpisodes)
-      .catch((err) => setErreur(err.message));
-    // `version` change quand on coche tout d'un coup : la liste depliee
-    // doit alors etre relue, sinon elle affiche un etat perime
-  }, [serie.id, version]);
+    function auClavier(e) {
+      if (e.key === "Escape") onFermer();
+    }
+    document.addEventListener("keydown", auClavier);
+    // Le fond ne doit pas defiler derriere la surcouche
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.removeEventListener("keydown", auClavier);
+      document.body.style.overflow = "";
+    };
+  }, [onFermer]);
+
+  return html`
+    <div class="surcouche" ref=${fond} role="dialog" aria-modal="true" aria-label=${etiquette}
+         onMouseDown=${(e) => e.target === fond.current && onFermer()}>
+      <div class="boite">
+        <button class="fermer" onClick=${onFermer} aria-label="Fermer">✕</button>
+        ${children}
+      </div>
+    </div>
+  `;
+}
+
+// ------------------------------------------------------------- vignette
+function Vignette({ serie, fiche: fichePretee, onClic }) {
+  const fiche = useFiche(fichePretee ? null : serie.show_id);
+  const f = fichePretee || fiche;
+  const total = serie.total;
+  const pourcent = total > 0 ? (serie.vus / total) * 100 : 0;
+
+  const sous = serie.seen
+    ? "Terminée"
+    : serie.next
+      ? `${code(serie.next)} · ${serie.next.name}`
+      : f && f.year
+        ? f.year
+        : "";
+
+  return html`
+    <button class=${`vignette ${serie.seen ? "finie" : ""}`} onClick=${onClic}>
+      <div class=${`image ${f ? "" : "squelette"}`}>
+        ${f && f.image && html`<img src=${f.image} alt="" loading="lazy" />`}
+        <div class="ombre">
+          <div class="nom">${serie.title}</div>
+          ${sous && html`<div class="sous">${sous}</div>`}
+          ${total > 0 && !serie.seen && html`
+            <div class="jauge"><i style=${{ width: `${pourcent}%` }}></i></div>
+          `}
+        </div>
+      </div>
+    </button>
+  `;
+}
+
+function Rangee({ titre, series, onOuvrir }) {
+  if (series.length === 0) return null;
+  return html`
+    <section class="rangee">
+      <h2>${titre}</h2>
+      <div class="piste">
+        ${series.map((s) => html`
+          <${Vignette} key=${s.id} serie=${s} onClic=${() => onOuvrir(s)} />
+        `)}
+      </div>
+    </section>
+  `;
+}
+
+// ------------------------------------------------------------- banniere
+function Banniere({ serie, onReprise, onOuvrir }) {
+  const fiche = useFiche(serie.show_id);
+
+  return html`
+    <header class="banniere">
+      ${fiche && (fiche.imageLarge || fiche.image) && html`
+        <div class="fond" style=${{ backgroundImage: `url(${fiche.imageLarge || fiche.image})` }}></div>
+      `}
+      <div class="voile"></div>
+      <div class="dedans">
+        <h1>${serie.title}</h1>
+        <p class="meta">
+          ${fiche ? [
+            fiche.year,
+            fiche.genres.slice(0, 3).join(" · "),
+            fiche.status === "Ended" ? "terminée" : "en cours",
+          ].filter(Boolean).join(" · ") : " "}
+          ${fiche && fiche.rating && html` · <span class="note">${fiche.rating}/10</span>`}
+        </p>
+        ${fiche && fiche.summary && html`<p class="resume">${fiche.summary}</p>`}
+        ${serie.next && html`
+          <p class="prochain-banniere">
+            À suivre : <b>${code(serie.next)}</b> · ${serie.next.name}
+          </p>
+        `}
+        <div class="actions">
+          <button class="bouton-clair" onClick=${() => onReprise(serie)}>▶ Reprendre</button>
+          <button class="bouton-sombre" onClick=${() => onOuvrir(serie)}>Épisodes</button>
+        </div>
+      </div>
+    </header>
+  `;
+}
+
+// ------------------------------------------------------------- detail
+function Detail({ serie, onFermer, onChangement, onRetrait }) {
+  const fiche = useFiche(serie.show_id);
+  const [episodes, setEpisodes] = useState(null);
+  const [saison, setSaison] = useState(null);
+  const [erreur, setErreur] = useState(null);
+
+  const charger = useCallback(async () => {
+    try {
+      const liste = await api(`/watchlist/${serie.id}/episodes`);
+      setEpisodes(liste);
+      setSaison((actuelle) => actuelle ?? (liste.find((e) => !e.seen) || liste[0] || {}).season ?? 1);
+    } catch (err) {
+      setErreur(err.message);
+    }
+  }, [serie.id]);
+
+  useEffect(() => { charger(); }, [charger]);
 
   async function basculer(episode) {
-    // On met a jour l'affichage tout de suite, le serveur suit
     setEpisodes((liste) =>
       liste.map((e) => (e.id === episode.id ? { ...e, seen: !e.seen } : e))
     );
@@ -435,157 +480,150 @@ function Episodes({ serie, version, onChangement }) {
     onChangement();
   }
 
-  if (erreur) return html`<div class="episodes"><p class="erreur">${erreur}</p></div>`;
-  if (!episodes) return html`<div class="episodes"><p class="vide">Chargement…</p></div>`;
+  async function tout(seen) {
+    await api(`/watchlist/${serie.id}`, { method: "PATCH", body: JSON.stringify({ seen }) });
+    await charger();
+    onChangement();
+  }
 
-  const saisons = [...new Set(episodes.map((e) => e.season))];
+  const saisons = episodes ? [...new Set(episodes.map((e) => e.season))] : [];
+  const affiches = episodes ? episodes.filter((e) => e.season === saison) : [];
 
   return html`
-    <div class="episodes">
-      ${fiche && html`
-        <p class="fiche">
-          ${fiche.year || "année inconnue"}
-          ${fiche.genres.length > 0 && ` · ${fiche.genres.join(", ")}`}
-          ${fiche.status && ` · ${fiche.status === "Ended" ? "terminée" : "en cours"}`}
-          ${fiche.rating && html` · <span class="note">${fiche.rating}/10</span>`}
-        </p>
-      `}
-      ${fiche && fiche.summary && html`<p class="synopsis">${fiche.summary}</p>`}
-      ${saisons.map((saison) => html`
-        <div key=${saison}>
-          <h3>Saison ${saison}</h3>
-          ${episodes.filter((e) => e.season === saison).map((e) => html`
-            <label key=${e.id} class=${e.seen ? "vu" : ""}>
-              <input type="checkbox" checked=${e.seen} onChange=${() => basculer(e)} />
-              <code>${code(e)}</code>
-              <span>${e.name}</span>
-            </label>
-          `)}
+    <${Surcouche} onFermer=${onFermer} etiquette=${serie.title}>
+      <div class="haut-detail">
+        ${fiche && (fiche.imageLarge || fiche.image) && html`
+          <div class="fond" style=${{ backgroundImage: `url(${fiche.imageLarge || fiche.image})` }}></div>
+        `}
+        <div class="voile"></div>
+        <div class="dedans">
+          <h2>${serie.title}</h2>
+          <p class="meta">
+            ${serie.total ? `${serie.vus}/${serie.total} épisodes` : ""}
+            ${fiche && fiche.rating && html` · <span class="note">${fiche.rating}/10</span>`}
+          </p>
         </div>
-      `)}
-    </div>
+      </div>
+      <div class="corps">
+        ${fiche && fiche.summary && html`<p class="resume" style=${{ WebkitLineClamp: 6 }}>${fiche.summary}</p>`}
+        <div class="actions">
+          <button class="bouton-sombre" onClick=${() => tout(!serie.seen)}>
+            ${serie.seen ? "Tout décocher" : "Tout cocher"}
+          </button>
+          <button class="bouton-sombre" onClick=${() => { onRetrait(serie); onFermer(); }}>
+            Retirer de ma liste
+          </button>
+        </div>
+        ${erreur && html`<p class="erreur">${erreur}</p>`}
+        ${!episodes && !erreur && html`<p class="vide" style=${{ padding: 0 }}>Chargement des épisodes…</p>`}
+        ${saisons.length > 0 && html`
+          <div class="saisons">
+            ${saisons.map((n) => html`
+              <button key=${n} aria-pressed=${n === saison} onClick=${() => setSaison(n)}>
+                Saison ${n}
+              </button>
+            `)}
+          </div>
+        `}
+        ${affiches.map((e) => html`
+          <label key=${e.id} class=${`episode ${e.seen ? "vu" : ""}`}>
+            <input type="checkbox" checked=${e.seen} onChange=${() => basculer(e)} />
+            <span class="num">${code(e)}</span>
+            <span class="nom">${e.name}</span>
+          </label>
+        `)}
+      </div>
+    <//>
   `;
 }
 
-function Serie({ serie, version, onBascule, onRetrait, onReprise, onChangement }) {
-  const [ouverte, setOuverte] = useState(false);
-  const [occupee, setOccupee] = useState(false);
-  const fiche = useFiche(serie.show_id);
-  const total = serie.total;
-  const pourcent = total > 0 ? (serie.vus / total) * 100 : 0;
+// ------------------------------------------------------------- recherche
+function Recherche({ onFermer, onAjout, dejaDansLaListe }) {
+  const [q, setQ] = useState("");
+  const [resultats, setResultats] = useState(null);
+  const [cherche, setCherche] = useState(false);
+  const [enCours, setEnCours] = useState(null);
+  const [erreur, setErreur] = useState(null);
+  const champ = useRef(null);
 
-  async function action(faire) {
-    setOccupee(true);
+  // `autofocus` n'est honore qu'au chargement de la page : sur un element
+  // ajoute apres coup, c'est a nous de donner le focus
+  useEffect(() => {
+    champ.current && champ.current.focus();
+  }, []);
+
+  async function chercher(e) {
+    e.preventDefault();
+    if (!q.trim()) return;
+    setCherche(true);
+    setErreur(null);
     try {
-      await faire();
+      setResultats(await api(`/shows?q=${encodeURIComponent(q)}`));
+    } catch (err) {
+      setErreur(err.message);
     } finally {
-      setOccupee(false);
+      setCherche(false);
     }
   }
 
-  const progression = total
-    ? `${serie.vus}/${total} épisodes`
-    : serie.vus > 0
-      ? `${serie.vus} épisode${serie.vus > 1 ? "s" : ""} vu${serie.vus > 1 ? "s" : ""}`
-      : fiche && fiche.genres.length > 0
-        ? fiche.genres.slice(0, 2).join(" · ")
-        : null;
-
-  const prochain = serie.next
-    ? `${code(serie.next)} · ${serie.next.name}`
-    : serie.seen
-      ? "Terminée"
-      : null;
-
-  // Les boutons d'action vivent dans la carte cliquable : sans ce garde,
-  // cliquer « Retirer » deplierait aussi la serie
-  function basculerOuverture(e) {
-    if (e.target.closest("button, a, input, label")) return;
-    setOuverte(!ouverte);
+  async function ajouter(serie) {
+    setEnCours(serie.id);
+    try {
+      await onAjout(serie);
+      onFermer();
+    } finally {
+      setEnCours(null);
+    }
   }
 
   return html`
-    <li class=${`serie ${serie.seen ? "vue" : ""} ${ouverte ? "ouverte" : ""}`}>
-      <div class="haut depliable" onClick=${basculerOuverture}>
-        <button class="chevron" onClick=${() => setOuverte(!ouverte)}
-                aria-expanded=${ouverte}
-                aria-label=${`${ouverte ? "Replier" : "Déplier"} les épisodes de ${serie.title}`}>
-          <span aria-hidden="true">▸</span>
-        </button>
-        ${fiche && fiche.image
-          ? html`<img class="affiche" src=${fiche.image} alt="" loading="lazy" />`
-          : html`<div class=${`affiche ${fiche ? "vide" : "squelette"}`}></div>`}
-        <div class="titre">
-          <b>${serie.title}</b>
-          <span class="progression">
-            ${progression}
-            ${progression && prochain && " · "}
-            ${prochain && html`<span class="prochain">${prochain}</span>`}
-          </span>
-        </div>
-        ${!serie.seen && html`
-          <button disabled=${occupee} onClick=${() => action(() => onReprise(serie))}>
-            ${occupee ? "…" : "Reprendre"}
+    <${Surcouche} onFermer=${onFermer} etiquette="Ajouter une série">
+      <div class="corps" style=${{ paddingTop: "1.8rem" }}>
+        <h2 style=${{ margin: "0 0 1rem" }}>Ajouter une série</h2>
+        <form class="recherche-form" onSubmit=${chercher}>
+          <input ref=${champ} value=${q} onInput=${(e) => setQ(e.target.value)}
+                 placeholder="Chercher une série…" aria-label="Chercher une série" />
+          <button class="bouton-clair" type="submit" disabled=${cherche || !q.trim()}>
+            ${cherche ? "…" : "Chercher"}
           </button>
+        </form>
+        ${erreur && html`<p class="erreur" style=${{ padding: 0 }}>${erreur}</p>`}
+        ${cherche && html`
+          <div class="grille">
+            ${[0, 1, 2, 3, 4].map((i) => html`
+              <div key=${i} class="vignette"><div class="image squelette"></div></div>
+            `)}
+          </div>
         `}
-        <button class="discret" disabled=${occupee}
-                onClick=${() => action(() => onBascule(serie))}>
-          ${serie.seen ? "Tout décocher" : "Tout cocher"}
-        </button>
-        <button class="discret" disabled=${occupee}
-                onClick=${() => action(() => onRetrait(serie))}>Retirer</button>
+        ${!cherche && resultats && resultats.length === 0 && html`
+          <p class="vide" style=${{ padding: 0 }}>Aucune série ne correspond à « ${q} ».</p>
+        `}
+        ${!cherche && resultats && resultats.length > 0 && html`
+          <div class="grille">
+            ${resultats.map((s) => {
+              const deja = dejaDansLaListe(s.id);
+              return html`
+                <${Vignette} key=${s.id}
+                  serie=${{ id: s.id, title: s.title, total: null, vus: 0, seen: false, next: null }}
+                  fiche=${{ image: s.image, year: deja ? "Déjà dans ma liste" : s.year }}
+                  onClic=${() => !deja && enCours !== s.id && ajouter(s)} />
+              `;
+            })}
+          </div>
+        `}
       </div>
-      ${total > 0 && html`<div class="barre"><i style=${{ width: `${pourcent}%` }}></i></div>`}
-      ${ouverte && html`<${Episodes} serie=${serie} version=${version} onChangement=${onChangement} />`}
-    </li>
+    <//>
   `;
 }
 
-function Liste({ series, version, onBascule, onRetrait, onReprise, onChangement }) {
-  const [terminéesVisibles, setTerminéesVisibles] = useState(false);
-
-  if (series.length === 0) {
-    return html`<p class="vide">Rien pour l'instant. Cliquez sur « Ajouter une série » pour commencer.</p>`;
-  }
-
-  const enCours = series.filter((s) => !s.seen);
-  const terminees = series.filter((s) => s.seen);
-
-  const cartes = (liste) => html`
-    <ul>
-      ${liste.map((s) => html`
-        <${Serie} key=${s.id} serie=${s} version=${version} onBascule=${onBascule}
-                  onRetrait=${onRetrait} onReprise=${onReprise} onChangement=${onChangement} />
-      `)}
-    </ul>
-  `;
-
-  return html`
-    ${enCours.length > 0 && cartes(enCours)}
-    ${enCours.length === 0 && html`
-      <p class="vide">Tout est à jour : aucune série en cours.</p>
-    `}
-    ${terminees.length > 0 && html`
-      <div class="section-terminees">
-        <button class="replier" onClick=${() => setTerminéesVisibles(!terminéesVisibles)}
-                aria-expanded=${terminéesVisibles}>
-          <span class="chevron-inline ${terminéesVisibles ? "ouvert" : ""}" aria-hidden="true">▸</span>
-          Terminées (${terminees.length})
-        </button>
-        ${terminéesVisibles && cartes(terminees)}
-      </div>
-    `}
-  `;
-}
-
+// ------------------------------------------------------------- application
 function App() {
   const [login, setLogin] = useState(() => localStorage.getItem("binggge_login"));
   const [series, setSeries] = useState([]);
   const [erreur, setErreur] = useState(null);
-  // Incremente par les actions qui touchent plusieurs episodes a la fois
-  const [version, setVersion] = useState(0);
-  const [rechercheOuverte, setRechercheOuverte] = useState(false);
   const [message, setMessage] = useState(null);
+  const [rechercheOuverte, setRechercheOuverte] = useState(false);
+  const [detail, setDetail] = useState(null);
 
   const recharger = useCallback(async () => {
     try {
@@ -604,21 +642,16 @@ function App() {
     return () => clearTimeout(minuteur);
   }, [message]);
 
+  // Le detail affiche doit suivre les mises a jour de la liste
+  const detailVivant = detail ? series.find((s) => s.id === detail.id) || detail : null;
+
   async function ajouter(serie) {
     await api("/watchlist", {
       method: "POST",
       body: JSON.stringify({ show_id: serie.id, title: serie.title }),
     });
     await recharger();
-  }
-
-  async function basculer(serie) {
-    await api(`/watchlist/${serie.id}`, {
-      method: "PATCH",
-      body: JSON.stringify({ seen: !serie.seen }),
-    });
-    setVersion((v) => v + 1);
-    recharger();
+    setMessage(`${serie.title} ajoutée à votre liste`);
   }
 
   async function reprendre(serie) {
@@ -628,18 +661,13 @@ function App() {
     } catch (err) {
       setMessage(err.message);
     }
-    // La liste depliee doit refleter le nouvel episode coche
-    setVersion((v) => v + 1);
     recharger();
   }
 
   async function retirer(serie) {
     await api(`/watchlist/${serie.id}`, { method: "DELETE" });
+    setMessage(`${serie.title} retirée de votre liste`);
     recharger();
-  }
-
-  function ajoutTermine() {
-    setRechercheOuverte(false);
   }
 
   function sortir() {
@@ -648,38 +676,44 @@ function App() {
     setSeries([]);
   }
 
+  if (!login) return html`<${Accueil} onConnecte=${setLogin} />`;
+
+  const enCours = series.filter((s) => !s.seen);
+  const terminees = series.filter((s) => s.seen);
+  // La banniere met en avant la serie la plus avancee parmi celles commencees
+  const vedette = [...enCours].sort((a, b) => b.vus - a.vus)[0];
+
   return html`
+    <div class="entete">
+      <span class="marque">bin<span>ggg</span>e</span>
+      <span class="pousse"></span>
+      <span class="qui">Connecté comme <b>${login}</b></span>
+      <button class="bouton-sombre" onClick=${sortir}>Changer</button>
+      <button class="bouton-clair" onClick=${() => setRechercheOuverte(true)}>+ Ajouter</button>
+    </div>
+
+    ${vedette
+      ? html`<${Banniere} serie=${vedette} onReprise=${reprendre} onOuvrir=${setDetail} />`
+      : html`<div style=${{ height: "2rem" }}></div>`}
+
     <main>
-      <h1>bin<span>ggg</span>e</h1>
-      <p class="sous-titre">Suivez vos séries, épisode par épisode.</p>
-      ${!login
-        ? html`<${Connexion} onConnecte=${setLogin} />`
-        : html`
-            <header class="moi">
-              <span>Connecté comme <b>${login}</b></span>
-              <button class="discret" onClick=${sortir}>Changer</button>
-            </header>
-            <div class="barre-titre">
-              <h2>Ma liste</h2>
-              <button onClick=${() => setRechercheOuverte(!rechercheOuverte)}
-                      aria-expanded=${rechercheOuverte}>
-                ${rechercheOuverte ? "Fermer" : "Ajouter une série"}
-              </button>
-            </div>
-            ${rechercheOuverte && html`
-              <div class="panneau">
-                <${Recherche} onAjout=${ajouter} onAjoutTermine=${ajoutTermine}
-                              dejaDansLaListe=${(showId) => series.some((s) => s.show_id === showId)} />
-              </div>
-            `}
-            ${erreur && html`<p class="erreur">${erreur}</p>`}
-            <div class="zone-message">
-              ${message && html`<p class="message" role="status">${message}</p>`}
-            </div>
-            <${Liste} series=${series} version=${version} onBascule=${basculer}
-                      onRetrait=${retirer} onReprise=${reprendre} onChangement=${recharger} />
-          `}
+      ${erreur && html`<p class="erreur">${erreur}</p>`}
+      ${series.length === 0 && html`
+        <p class="vide">Votre liste est vide. Cliquez sur « + Ajouter » pour commencer.</p>
+      `}
+      <${Rangee} titre="Continuer à regarder" series=${enCours} onOuvrir=${setDetail} />
+      <${Rangee} titre="Terminées" series=${terminees} onOuvrir=${setDetail} />
     </main>
+
+    ${rechercheOuverte && html`
+      <${Recherche} onFermer=${() => setRechercheOuverte(false)} onAjout=${ajouter}
+                    dejaDansLaListe=${(showId) => series.some((s) => s.show_id === showId)} />
+    `}
+    ${detailVivant && html`
+      <${Detail} serie=${detailVivant} onFermer=${() => setDetail(null)}
+                 onChangement=${recharger} onRetrait=${retirer} />
+    `}
+    ${message && html`<div class="message" role="status">${message}</div>`}
   `;
 }
 

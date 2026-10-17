@@ -28,6 +28,7 @@ tvmaze.fiche = async (id) => {
     title: "Série d'essai",
     year: "2022",
     image: null,
+    imageLarge: null,
     summary: tvmaze.texteBrut("<p>Un <b>synopsis</b> avec des balises.</p>"),
     genres: ["Drama"],
     status: "Running",
