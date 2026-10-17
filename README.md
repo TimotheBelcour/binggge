@@ -33,6 +33,9 @@ Chaque série annonce son prochain épisode (« 0/12 épisodes · S01E01 · Glor
 bouton « Reprendre » le coche sans avoir à déplier la série.
 Les fiches viennent de `GET /shows/:id`, chargées à la demande et gardées en mémoire.
 
+Les séries en cours occupent le haut de la liste ; les terminées sont regroupées dans une section
+repliée. Toute la carte d'une série est cliquable pour la déplier, pas seulement la flèche.
+
 L'interface suit le thème clair ou sombre du système, s'adapte au mobile, désactive les boutons
 pendant les envois et respecte `prefers-reduced-motion`.
 Elle est écrite en React chargé depuis un CDN, sans étape de build — le fichier HTML est le
