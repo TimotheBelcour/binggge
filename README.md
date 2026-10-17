@@ -122,6 +122,32 @@ sudo binggge logs --tail 50 api
 sudo binggge exec -T db psql -U postgres binggge < api/db/schema.sql   # une seule fois
 ```
 
+## Démo
+
+**https://iut.cafeclaudie.fr/TimotheBelcour/** — se connecter avec le login `demo`, dont la liste
+contient volontairement les trois états possibles : une série en cours (Loki, 5/12), une jamais
+commencée (Severance, 0/19) et une terminée (Chernobyl, 5/5).
+
+Parcours à dérouler, et ce qu'il déclenche :
+
+| Geste | Côté serveur |
+|---|---|
+| Ouvrir la page | `GET /watchlist` — progression et prochain épisode de chaque série |
+| « ▶ Reprendre » dans la bannière | `POST /watchlist/:id/episodes/next` — coche le premier épisode non vu |
+| Clic sur une vignette | `GET /watchlist/:id/episodes` + `GET /shows/:id` |
+| Cocher un épisode | `PUT /watchlist/:id/episodes/:episodeId` |
+| « Tout cocher » | `PATCH /watchlist/:id` — la série bascule dans « Terminées » |
+| « + Ajouter » puis une recherche | `GET /shows?q=` puis `POST /watchlist` |
+| Retirer une série | `DELETE /watchlist/:id` |
+
+Ce qu'on ne voit pas à l'écran mais qui tient le tout : la base PostgreSQL en conteneur, les
+22 tests, et le pipeline `test → build → deploy` qui met cette page en ligne à chaque merge
+sur `main`. Un `curl https://iut.cafeclaudie.fr/TimotheBelcour/health` répond `{"status":"ok"}` :
+c'est la route que le déploiement interroge avant de se déclarer réussi.
+
+Pour montrer un refus : `curl https://iut.cafeclaudie.fr/TimotheBelcour/watchlist` sans en-tête
+renvoie `401`, et viser l'identifiant d'une série d'un autre utilisateur renvoie `404`.
+
 ## Définition de « fini »
 
 Un ticket est fini quand les quatre conditions sont réunies :
